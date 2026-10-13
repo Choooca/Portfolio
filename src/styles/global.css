@@ -1,0 +1,228 @@
+/* ==========================================================================
+   global.css — police, reset, variables de mise en page, etats d'accessibilite
+   Les couleurs vivent dans tokens.css, jamais ici.
+   ========================================================================== */
+
+@import './tokens.css';
+
+/* ==========================================================================
+   Intel One Mono — auto-hebergee (SIL Open Font License, voir
+   src/assets/fonts/OFL.txt). Les chemins sont relatifs : Vite les resout au
+   build, applique le `base` du site et ajoute un hash de cache.
+
+   Intel One Mono v1.4.0 ne fournit pas de SemiBold (600) : les graisses
+   reelles sont 300 / 400 / 500 / 700. Le « SemiBold » de la maquette est
+   donc rendu par Bold 700 (voir --fw-semibold plus bas).
+   ========================================================================== */
+
+@font-face {
+  font-family: 'Intel One Mono';
+  src: url('../assets/fonts/IntelOneMono-Light.woff2') format('woff2');
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Intel One Mono';
+  src: url('../assets/fonts/IntelOneMono-Regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Intel One Mono';
+  src: url('../assets/fonts/IntelOneMono-Italic.woff2') format('woff2');
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Intel One Mono';
+  src: url('../assets/fonts/IntelOneMono-Medium.woff2') format('woff2');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Intel One Mono';
+  src: url('../assets/fonts/IntelOneMono-Bold.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* ==========================================================================
+   Variables de mise en page
+   Breakpoints : mobile < 640px, tablette 640-1023px, desktop >= 1024px.
+   Les media queries ne peuvent pas lire une variable CSS : les valeurs de
+   breakpoint sont documentees ici mais ecrites en dur dans les @media.
+   ========================================================================== */
+
+:root {
+  --font-mono: 'Intel One Mono', ui-monospace, 'SF Mono', 'Cascadia Mono',
+    'Segoe UI Mono', Menlo, Consolas, monospace;
+
+  --fw-light: 300;
+  --fw-regular: 400;
+  --fw-medium: 500;
+  /* Pas de 600 dans Intel One Mono : Bold est la graisse la plus proche. */
+  --fw-semibold: 700;
+
+  /* Largeur de contenu et marges laterales (mobile par defaut) */
+  --content-max: 1680px;
+  --gutter: 20px;
+
+  /* Hauteur de la navigation collee, utilisee par scroll-padding-top
+     et par le `top` de la barre de filtres de la Bibliotheque. */
+  --nav-height: 64px;
+
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+}
+
+@media (min-width: 640px) {
+  :root {
+    --gutter: 40px;
+  }
+}
+
+@media (min-width: 1024px) {
+  :root {
+    --gutter: 120px;
+    --nav-height: 72px;
+  }
+}
+
+/* ==========================================================================
+   Reset leger
+   ========================================================================== */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+* {
+  margin: 0;
+}
+
+html {
+  /* Les ancres (« Contact » -> pied de page) ne passent pas sous la nav. */
+  scroll-padding-top: var(--nav-height);
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  min-height: 100svh;
+  background-color: var(--bg-page);
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  font-weight: var(--fw-regular);
+  font-size: 1rem;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-weight: var(--fw-medium);
+  line-height: 1.2;
+  text-wrap: balance;
+}
+
+p {
+  text-wrap: pretty;
+}
+
+img,
+picture,
+video,
+canvas,
+svg {
+  display: block;
+  max-width: 100%;
+}
+
+input,
+button,
+textarea,
+select {
+  font: inherit;
+  color: inherit;
+}
+
+button {
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+a {
+  color: inherit;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.25em;
+}
+
+ul[role='list'],
+ol[role='list'] {
+  list-style: none;
+  padding: 0;
+}
+
+/* ==========================================================================
+   Accessibilite
+   ========================================================================== */
+
+/* Focus clavier uniquement : contour 2px, decale de 4px. */
+:focus-visible {
+  outline: 2px solid var(--accent-fill);
+  outline-offset: 4px;
+  border-radius: var(--radius-sm);
+}
+
+:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* Reserve aux lecteurs d'ecran. */
+.visually-hidden:not(:focus-within) {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ==========================================================================
+   Utilitaires de mise en page
+   ========================================================================== */
+
+.wrapper {
+  width: 100%;
+  max-width: calc(var(--content-max) + 2 * var(--gutter));
+  margin-inline: auto;
+  padding-inline: var(--gutter);
+}

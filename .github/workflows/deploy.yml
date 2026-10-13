@@ -1,0 +1,48 @@
+name: Déploiement GitHub Pages
+
+on:
+  # Publie à chaque push sur main.
+  push:
+    branches: [main]
+  # Permet de relancer un déploiement à la main depuis l'onglet Actions.
+  workflow_dispatch:
+
+# Droits requis par actions/deploy-pages.
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Un seul déploiement à la fois ; on ne coupe pas celui en cours.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Récupérer le dépôt
+        uses: actions/checkout@v7
+
+      # withastro/action installe les dépendances (npm ci), lance
+      # `npm run build` (soit `astro check && astro build`) et téléverse
+      # dist/ comme artefact Pages.
+      - name: Installer, vérifier et construire
+        uses: withastro/action@v6
+        with:
+          node-version: 24
+          package-manager: npm
+
+  deploy:
+    name: Déploiement
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Publier sur GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v5

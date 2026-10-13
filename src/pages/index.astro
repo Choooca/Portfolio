@@ -1,0 +1,87 @@
+---
+// Page provisoire (session 1). Elle sert uniquement a verifier que les
+// fondations tiennent : layout, theme, police, collection de contenu.
+// Elle sera remplacee par l'accueil de la maquette en session 2.
+import { getCollection } from 'astro:content';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { href } from '../lib/url';
+
+const projets = await getCollection('projets');
+projets.sort((a, b) => (a.data.ordre ?? 0) - (b.data.ordre ?? 0));
+---
+
+<BaseLayout titre="Accueil">
+  <div class="wrapper stub">
+    <h1>Paul Vincensini</h1>
+    <p class="pitch">Gameplay programmer. Fondations en place — pages a venir.</p>
+
+    <h2>Projets charges depuis la collection</h2>
+    <ul role="list" class="liste">
+      {
+        projets.map((projet) => (
+          <li>
+            <a href={href(`/projets/${projet.id}`)}>{projet.data.titre}</a>
+            <span class="genre">{projet.data.genre}</span>
+            <span class="equipe">
+              {projet.data.equipe === 1 ? 'Solo' : `${projet.data.equipe} personnes`}
+            </span>
+          </li>
+        ))
+      }
+    </ul>
+  </div>
+</BaseLayout>
+
+<style>
+  .stub {
+    padding-block: 4rem;
+  }
+
+  h1 {
+    font-weight: var(--fw-semibold);
+    font-size: clamp(2rem, 6vw, 3.5rem);
+  }
+
+  .pitch {
+    color: var(--text-muted);
+    margin-block: 0.5rem 3rem;
+  }
+
+  h2 {
+    font-size: 1rem;
+    color: var(--text-subtle);
+    font-weight: var(--fw-regular);
+    padding-block-end: 0.75rem;
+    border-block-end: 1px solid var(--separator);
+  }
+
+  .liste {
+    display: grid;
+    gap: 1px;
+    margin: 0;
+  }
+
+  .liste li {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem 1rem;
+    align-items: baseline;
+    padding-block: 1rem;
+    border-block-end: 1px solid var(--separator);
+  }
+
+  .liste a {
+    color: var(--text-primary);
+    font-weight: var(--fw-medium);
+    text-decoration-color: var(--accent-fill);
+  }
+
+  .genre {
+    color: var(--text-muted);
+  }
+
+  .equipe {
+    margin-inline-start: auto;
+    color: var(--text-subtle);
+  }
+</style>

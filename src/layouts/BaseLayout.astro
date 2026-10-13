@@ -1,0 +1,96 @@
+---
+import '../styles/global.css';
+import { absoluteUrl } from '../lib/url';
+import { DEFAULT_LOCALE, type Locale } from '../i18n';
+
+// Importes en `?url` pour que Vite applique le `base` du site et un hash
+// de cache : on ne peut pas ecrire le chemin en dur dans le <link>.
+import fontRegular from '../assets/fonts/IntelOneMono-Regular.woff2?url';
+import fontMedium from '../assets/fonts/IntelOneMono-Medium.woff2?url';
+
+interface Props {
+  titre: string;
+  description?: string;
+  locale?: Locale;
+  /** Masque le titre du site devant le titre de la page (utile en accueil). */
+  titreSeul?: boolean;
+}
+
+const {
+  titre,
+  description = 'Portfolio de Paul Vincensini, gameplay programmer.',
+  locale = DEFAULT_LOCALE,
+  titreSeul = false,
+} = Astro.props;
+
+const SITE_NAME = 'Paul Vincensini';
+const titreComplet = titreSeul ? titre : `${titre} — ${SITE_NAME}`;
+const canonical = absoluteUrl(Astro.url.pathname, Astro.site);
+---
+
+<!doctype html>
+<html lang={locale}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{titreComplet}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+    <link rel="icon" href={absoluteUrl('/favicon.svg', Astro.site)} type="image/svg+xml" />
+    <meta name="generator" content={Astro.generator} />
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={titreComplet} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:site_name" content={SITE_NAME} />
+
+    <!-- Les deux graisses presentes sur chaque page, chargees en priorite. -->
+    <link rel="preload" href={fontRegular} as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href={fontMedium} as="font" type="font/woff2" crossorigin />
+
+    {/*
+      Theme applique AVANT le premier rendu, pour eviter le flash.
+      `is:inline` empeche Astro de deplacer ou differer ce script.
+      Le mode sombre est la reference : sans JavaScript, le site reste en
+      sombre, qui est le theme par defaut de tokens.css.
+    */}
+    <script is:inline>
+      (function () {
+        var KEY = 'theme';
+        var root = document.documentElement;
+        var media = window.matchMedia('(prefers-color-scheme: light)');
+
+        function stored() {
+          try {
+            var v = localStorage.getItem(KEY);
+            return v === 'light' || v === 'dark' ? v : null;
+          } catch (e) {
+            return null;
+          }
+        }
+
+        function apply(theme) {
+          root.dataset.theme = theme;
+        }
+
+        // Choix memorise d'abord, preference systeme ensuite.
+        apply(stored() || (media.matches ? 'light' : 'dark'));
+
+        // Suivre le systeme tant que le visiteur n'a rien choisi.
+        media.addEventListener('change', function (event) {
+          if (!stored()) apply(event.matches ? 'light' : 'dark');
+        });
+      })();
+    </script>
+  </head>
+
+  <body>
+    {/* TODO(session 2) : <Nav /> */}
+    <main id="contenu">
+      <slot />
+    </main>
+    {/* TODO(session 2) : <Footer /> */}
+  </body>
+</html>

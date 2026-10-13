@@ -1,0 +1,153 @@
+/* ==========================================================================
+   tokens.css — collection Figma « Couleurs » (22 variables)
+
+   Le mode sombre est la REFERENCE : il vit sur `:root`.
+   Le mode clair ne redefinit que les valeurs, via [data-theme="light"].
+   Convention de nom : `text/primary` (Figma) -> `--text-primary` (CSS).
+
+   Ne jamais ecrire une couleur en dur dans un composant : toujours var(--…).
+   ========================================================================== */
+
+:root {
+  color-scheme: dark;
+
+  /* --- Fonds ------------------------------------------------------------ */
+  --bg-page: #0a0918;
+  --bg-nav: #07061a;
+  --bg-band: #0d0c20;
+  --bg-section-alt: #0e0d22;
+
+  /* --- Surfaces --------------------------------------------------------- */
+  --surface-default: #14122c;
+  --surface-raised: #1b1838;
+
+  /* --- Bordures et lignes ----------------------------------------------- */
+  --border-default: #2a2752;
+  /* Couleur de trait pure, destinee a etre utilisee avec une opacite. */
+  --line-default: #ffffff;
+
+  /* --- Textes ----------------------------------------------------------- */
+  --text-primary: #f2f1fa;
+  --text-secondary: #cfcde6;
+  --text-muted: #a6a3c4;
+  --text-subtle: #7d7aa3;
+
+  /* --- Accent ----------------------------------------------------------- */
+  --accent-fill: #ffd900;
+  --accent-text: #ffd900;
+  --accent-on: #0a0918;
+
+  /* --- Pastilles et placeholders de medias ------------------------------ */
+  --chip-bg: #ffffff;
+  --media-placeholder: #1f1c40;
+  --media-placeholder-icon: #4a4675;
+  --media-placeholder-hover: #2a2650;
+
+  /* --- Texte des tags --------------------------------------------------- */
+  --tag-domaine-text: #ff9ea0;
+  --tag-moteur-text: #cdb4ff;
+  --tag-langage-text: #afc0ff;
+}
+
+[data-theme='light'] {
+  color-scheme: light;
+
+  /* --- Fonds ------------------------------------------------------------ */
+  --bg-page: #f7f6fb;
+  --bg-nav: #ffffff;
+  --bg-band: #ffffff;
+  --bg-section-alt: #efedf7;
+
+  /* --- Surfaces --------------------------------------------------------- */
+  --surface-default: #ffffff;
+  --surface-raised: #f3f1fa;
+
+  /* --- Bordures et lignes ----------------------------------------------- */
+  --border-default: #e2dff0;
+  --line-default: #14122c;
+
+  /* --- Textes ----------------------------------------------------------- */
+  --text-primary: #14122c;
+  --text-secondary: #3d3a5c;
+  --text-muted: #5e5b80;
+  --text-subtle: #7a7799;
+
+  /* --- Accent ----------------------------------------------------------- */
+  --accent-fill: #f2c200;
+  --accent-text: #8f6b00;
+  --accent-on: #0a0918;
+
+  /* --- Pastilles et placeholders de medias ------------------------------ */
+  --chip-bg: #eceaf6;
+  --media-placeholder: #e6e3f2;
+  --media-placeholder-icon: #b5b1cf;
+  --media-placeholder-hover: #d9d5ec;
+
+  /* --- Texte des tags --------------------------------------------------- */
+  --tag-domaine-text: #c2292e;
+  --tag-moteur-text: #7a3fe0;
+  --tag-langage-text: #2f4fd6;
+}
+
+/* ==========================================================================
+   Pastilles — couleurs de base, identiques dans les deux themes.
+   Ce ne sont pas des variables Figma : elles sont posees en dur sur le
+   composant Tag (verifie sur le composant 57:14).
+   ========================================================================== */
+
+:root {
+  --tag-domaine: #e5484d;
+  --tag-moteur: #a06cff;
+  --tag-langage: #4c6fff;
+
+  /* Etat Default : fond a 16 %, bordure a 50 %, texte en --tag-*-text. */
+  --tag-domaine-bg: color-mix(in srgb, var(--tag-domaine) 16%, transparent);
+  --tag-moteur-bg: color-mix(in srgb, var(--tag-moteur) 16%, transparent);
+  --tag-langage-bg: color-mix(in srgb, var(--tag-langage) 16%, transparent);
+
+  --tag-domaine-border: color-mix(in srgb, var(--tag-domaine) 50%, transparent);
+  --tag-moteur-border: color-mix(in srgb, var(--tag-moteur) 50%, transparent);
+  --tag-langage-border: color-mix(in srgb, var(--tag-langage) 50%, transparent);
+
+  /* Etat Active : fond et bordure a pleine opacite, texte blanc pur
+     dans les deux themes (ce n'est pas --text-primary). */
+  --tag-active-text: #ffffff;
+}
+
+/* ==========================================================================
+   Transparences — bases verifiees dans Figma le 13/10/2026.
+
+   - separateur     : line/default a 7 %   (Divider 58:49)
+   - fond Mon role  : accent/fill a 5 %    (composant 2004:644)
+   - fond bouton CV : accent/fill a 8 %    (composant 66:512)
+
+   A noter pour les composants : « Mon role » porte en plus une bordure
+   gauche de 3 px en --accent-fill a PLEINE opacite, et le bouton CV une
+   bordure de 1 px en --accent-fill. Ces bordures ne sont pas transparentes.
+   ========================================================================== */
+
+:root {
+  --separator: color-mix(in srgb, var(--line-default) 7%, transparent);
+  --role-callout-bg: color-mix(in srgb, var(--accent-fill) 5%, transparent);
+  --cv-button-bg: color-mix(in srgb, var(--accent-fill) 8%, transparent);
+}
+
+/* ==========================================================================
+   Zones qui restent sombres dans les deux themes
+   (banniere demoreel, blocs de code) : on y reapplique les valeurs sombres.
+   ========================================================================== */
+
+.always-dark {
+  color-scheme: dark;
+  --bg-page: #0a0918;
+  --bg-band: #0d0c20;
+  --surface-default: #14122c;
+  --surface-raised: #1b1838;
+  --border-default: #2a2752;
+  --line-default: #ffffff;
+  --text-primary: #f2f1fa;
+  --text-secondary: #cfcde6;
+  --text-muted: #a6a3c4;
+  --text-subtle: #7d7aa3;
+  --accent-text: #ffd900;
+}

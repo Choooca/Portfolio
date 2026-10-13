@@ -1,0 +1,17 @@
+# build
+dist/
+.astro/
+
+# dépendances
+node_modules/
+
+# environnement
+.env
+.env.production
+
+# OS / éditeurs
+.DS_Store
+Thumbs.db
+*.log
+.vscode/
+.idea/
