@@ -4,6 +4,7 @@
 // Elle sera remplacee par l'accueil de la maquette en session 2.
 import { getCollection } from 'astro:content';
 import BaseLayout from '../layouts/BaseLayout.astro';
+import Tag from '../components/Tag.astro';
 import { href } from '../lib/url';
 
 const projets = await getCollection('projets');
@@ -14,6 +15,16 @@ projets.sort((a, b) => (a.data.ordre ?? 0) - (b.data.ordre ?? 0));
   <div class="wrapper stub">
     <h1>Paul Vincensini</h1>
     <p class="pitch">Gameplay programmer. Fondations en place — pages a venir.</p>
+
+    <h2>Pastilles — etat par defaut et etat actif</h2>
+    <div class="pastilles">
+      <Tag kind="domaine" label="Gameplay" />
+      <Tag kind="domaine" label="Graphique" active />
+      <Tag kind="moteur" label="Unity" />
+      <Tag kind="moteur" label="Godot" active />
+      <Tag kind="langage" label="C#" />
+      <Tag kind="langage" label="C++" active />
+    </div>
 
     <h2>Projets charges depuis la collection</h2>
     <ul role="list" class="liste">
@@ -53,6 +64,13 @@ projets.sort((a, b) => (a.data.ordre ?? 0) - (b.data.ordre ?? 0));
     font-weight: var(--fw-regular);
     padding-block-end: 0.75rem;
     border-block-end: 1px solid var(--separator);
+  }
+
+  .pastilles {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding-block: 1.5rem 3rem;
   }
 
   .liste {

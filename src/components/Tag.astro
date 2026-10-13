@@ -1,0 +1,91 @@
+---
+// Pastille de filtre — composant Figma « Tag » (57:14).
+// Kind = dimension du filtre (couleur), active = filtre selectionne.
+import { slugifyFiltre } from '../lib/slug';
+
+interface Props {
+  kind: 'domaine' | 'moteur' | 'langage';
+  label: string;
+  active?: boolean;
+  /** `false` pour une pastille d'affichage seul (hors contexte de filtrage). */
+  interactif?: boolean;
+  class?: string;
+}
+
+const {
+  kind,
+  label,
+  active = false,
+  interactif = true,
+  class: className,
+} = Astro.props;
+
+const valeur = slugifyFiltre(label);
+// Vrai bouton quand la pastille filtre, simple texte sinon.
+const Element = interactif ? 'button' : 'span';
+---
+
+<Element
+  class:list={['tag', `tag--${kind}`, { 'tag--active': active }, className]}
+  data-filtre-groupe={kind}
+  data-filtre-valeur={valeur}
+  type={interactif ? 'button' : undefined}
+  aria-pressed={interactif ? (active ? 'true' : 'false') : undefined}
+>
+  {label}
+</Element>
+
+<style>
+  .tag {
+    display: inline-flex;
+    align-items: center;
+    padding: 5px 12px;
+    border: 1px solid var(--tag-border);
+    border-radius: 999px;
+    background-color: var(--tag-bg);
+    color: var(--tag-text);
+    font-family: var(--font-mono);
+    font-weight: var(--fw-medium);
+    font-size: 13px;
+    line-height: normal;
+    white-space: nowrap;
+  }
+
+  button.tag {
+    cursor: pointer;
+    transition: background-color 120ms ease, border-color 120ms ease;
+  }
+
+  /* Chaque kind ne fait que pointer les trois couleurs de son groupe. */
+  .tag--domaine {
+    --tag-base: var(--tag-domaine);
+    --tag-bg: var(--tag-domaine-bg);
+    --tag-border: var(--tag-domaine-border);
+    --tag-text: var(--tag-domaine-text);
+  }
+
+  .tag--moteur {
+    --tag-base: var(--tag-moteur);
+    --tag-bg: var(--tag-moteur-bg);
+    --tag-border: var(--tag-moteur-border);
+    --tag-text: var(--tag-moteur-text);
+  }
+
+  .tag--langage {
+    --tag-base: var(--tag-langage);
+    --tag-bg: var(--tag-langage-bg);
+    --tag-border: var(--tag-langage-border);
+    --tag-text: var(--tag-langage-text);
+  }
+
+  /* Etat actif : pleine opacite, texte blanc pur dans les deux themes. */
+  .tag--active {
+    --tag-bg: var(--tag-base);
+    --tag-border: var(--tag-base);
+    --tag-text: var(--tag-active-text);
+  }
+
+  button.tag:hover:not(.tag--active) {
+    --tag-bg: color-mix(in srgb, var(--tag-base) 28%, transparent);
+  }
+</style>

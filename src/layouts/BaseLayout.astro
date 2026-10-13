@@ -1,7 +1,9 @@
 ---
 import '../styles/global.css';
-import { absoluteUrl } from '../lib/url';
+import { absoluteUrl, canonicalUrl } from '../lib/url';
 import { DEFAULT_LOCALE, type Locale } from '../i18n';
+import Nav from '../components/Nav.astro';
+import Footer from '../components/Footer.astro';
 
 // Importes en `?url` pour que Vite applique le `base` du site et un hash
 // de cache : on ne peut pas ecrire le chemin en dur dans le <link>.
@@ -25,7 +27,7 @@ const {
 
 const SITE_NAME = 'Paul Vincensini';
 const titreComplet = titreSeul ? titre : `${titre} — ${SITE_NAME}`;
-const canonical = absoluteUrl(Astro.url.pathname, Astro.site);
+const canonical = canonicalUrl(Astro.url.pathname, Astro.site);
 ---
 
 <!doctype html>
@@ -87,10 +89,10 @@ const canonical = absoluteUrl(Astro.url.pathname, Astro.site);
   </head>
 
   <body>
-    {/* TODO(session 2) : <Nav /> */}
+    <Nav locale={locale} />
     <main id="contenu">
       <slot />
     </main>
-    {/* TODO(session 2) : <Footer /> */}
+    <Footer locale={locale} />
   </body>
 </html>

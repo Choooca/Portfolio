@@ -1,0 +1,515 @@
+---
+// Barre de navigation — Figma « Nav » (51:3), « Nav / Mobile » (2009:1535)
+// et « Mobile / Menu ouvert » (2012:3313).
+//
+// Desktop (>= 1024px) : barre complete.
+// En dessous : barre compacte + menu burger plein ecran.
+// La maquette ne prevoit le burger qu'en mobile, mais la barre complete ne
+// tient pas dans 640-1023px (zones 320px + menu + langue). Le burger est donc
+// conserve jusqu'a 1024px, ce qui respecte « collee en haut » a toutes les
+// largeurs.
+import { Image } from 'astro:assets';
+import ThemeToggle from './ThemeToggle.astro';
+import Icone from './Icone.astro';
+import { href, isCurrent } from '../lib/url';
+import { useTranslations, type Locale } from '../i18n';
+import { LIENS, NAVIGATION } from '../lib/liens';
+import mailIcone from '../assets/icons/mail.png';
+import linkedinIcone from '../assets/icons/linkedin.png';
+import githubIcone from '../assets/icons/github.png';
+
+interface Props {
+  locale?: Locale;
+}
+
+const { locale = 'fr' } = Astro.props;
+const t = useTranslations(locale);
+const pathname = Astro.url.pathname;
+
+const entrees = NAVIGATION.map((entree) => ({
+  libelle: t(entree.cle),
+  // Les ancres restent telles quelles, les routes passent par href().
+  url: entree.chemin.startsWith('#') ? entree.chemin : href(entree.chemin),
+  actif: entree.chemin.startsWith('#')
+    ? false
+    : isCurrent(entree.chemin, pathname),
+}));
+
+const reseaux = [
+  { nom: 'Mail', url: LIENS.mail, image: mailIcone },
+  { nom: 'LinkedIn', url: LIENS.linkedin, image: linkedinIcone },
+  { nom: 'GitHub', url: LIENS.github, image: githubIcone },
+];
+---
+
+<header class="entete">
+  <nav class="barre" aria-label="Navigation principale">
+    <a class="marque" href={href('/')}>Paul Vincensini</a>
+
+    {/* ---- Liens centraux (desktop uniquement) ---- */}
+    <ul class="liens" role="list">
+      {
+        entrees.map((entree) => (
+          <li>
+            <a
+              href={entree.url}
+              class:list={['lien', { 'lien--actif': entree.actif }]}
+              aria-current={entree.actif ? 'page' : undefined}
+            >
+              {entree.libelle}
+              <span class="indicateur" aria-hidden="true" />
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+
+    {/* ---- Actions a droite ---- */}
+    <div class="actions">
+      <ThemeToggle locale={locale} />
+
+      <a class="cv" href={href(LIENS.cv)} download>
+        {t('nav.cv')}
+        <Icone nom="telechargement" />
+      </a>
+
+      <div class="langue" role="group" aria-label={t('nav.langue')}>
+        <span class="langue__actif">FR</span>
+        <span class="langue__sep" aria-hidden="true">/</span>
+        {/* TODO : routes anglaises absentes — libelle inerte en attendant. */}
+        <span class="langue__inactif" aria-disabled="true">EN</span>
+      </div>
+
+      <button
+        type="button"
+        class="burger"
+        aria-expanded="false"
+        aria-controls="menu-mobile"
+        data-menu-bascule
+      >
+        <Icone nom="burger" />
+        <span class="visually-hidden" data-menu-libelle>{t('nav.menu.ouvrir')}</span>
+      </button>
+    </div>
+  </nav>
+
+  {/* ---- Panneau mobile ---- */}
+  <div class="panneau" id="menu-mobile" hidden data-menu-panneau>
+    <ul class="panneau__liens" role="list">
+      {
+        entrees.map((entree, i) => (
+          <li>
+            <a
+              href={entree.url}
+              class:list={['rangee', { 'rangee--actif': entree.actif }]}
+              aria-current={entree.actif ? 'page' : undefined}
+            >
+              <span class="rangee__numero">{String(i + 1).padStart(2, '0')}</span>
+              <span class="rangee__libelle">{entree.libelle}</span>
+              <span class="rangee__fleche" aria-hidden="true">→</span>
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+
+    <div class="panneau__bas">
+      <div class="reglage">
+        <span class="reglage__titre">{t('nav.langue')}</span>
+        <div class="segmente" role="group" aria-label={t('nav.langue')}>
+          <span class="segmente__option segmente__option--actif">FR</span>
+          <span class="segmente__option" aria-disabled="true">EN</span>
+        </div>
+      </div>
+
+      <div class="reglage">
+        <span class="reglage__titre">{t('nav.theme')}</span>
+        <div class="segmente" role="group" aria-label={t('nav.theme')}>
+          <button type="button" class="segmente__option option-sombre" data-theme-set="dark">
+            <Icone nom="soleil-16" />
+            Sombre
+          </button>
+          <button type="button" class="segmente__option option-clair" data-theme-set="light">
+            <Icone nom="lune-16" />
+            Clair
+          </button>
+        </div>
+      </div>
+
+      <a class="cv-large" href={href(LIENS.cv)} download>
+        Télécharger mon CV
+        <Icone nom="telechargement" />
+      </a>
+
+      <ul class="reseaux" role="list">
+        {
+          reseaux.map((reseau) => (
+            <li>
+              <a href={reseau.url} class="puce" rel="noopener noreferrer">
+                <Image src={reseau.image} alt={reseau.nom} width={22} height={22} />
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+    </div>
+  </div>
+</header>
+
+<style>
+  .entete {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    background-color: var(--bg-nav);
+    border-block-end: 1px solid var(--separator);
+  }
+
+  .barre {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    height: var(--nav-height);
+    padding-inline: var(--gutter);
+  }
+
+  .marque {
+    font-weight: var(--fw-semibold);
+    font-size: 18px;
+    color: var(--text-primary);
+    text-decoration: none;
+    white-space: nowrap;
+  }
+
+  /* ---- Liens centraux : desktop seulement ---- */
+  .liens {
+    display: none;
+    margin: 0;
+  }
+
+  .lien {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    font-size: 18px;
+    color: var(--text-muted);
+    text-decoration: none;
+  }
+
+  .lien--actif {
+    font-weight: var(--fw-medium);
+    color: var(--text-primary);
+  }
+
+  .indicateur {
+    width: 24px;
+    height: 2px;
+    border-radius: 1px;
+    background-color: transparent;
+  }
+
+  .lien--actif .indicateur {
+    background-color: var(--accent-fill);
+  }
+
+  .lien:hover:not(.lien--actif) {
+    color: var(--text-primary);
+  }
+
+  /* ---- Actions ---- */
+  .actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .cv {
+    display: none;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 12px 7px 14px;
+    border: 1px solid var(--accent-fill);
+    border-radius: 10px;
+    background-color: var(--cv-button-bg);
+    color: var(--accent-text);
+    font-weight: var(--fw-medium);
+    font-size: 16px;
+    text-decoration: none;
+    white-space: nowrap;
+  }
+
+  .cv:hover {
+    background-color: color-mix(in srgb, var(--accent-fill) 16%, transparent);
+  }
+
+  .langue {
+    display: none;
+    align-items: center;
+    gap: 6px;
+    margin-inline-start: 6px;
+    font-size: 18px;
+  }
+
+  .langue__actif {
+    font-weight: var(--fw-medium);
+    color: var(--text-primary);
+  }
+
+  .langue__sep {
+    color: var(--text-subtle);
+  }
+
+  .langue__inactif {
+    color: var(--text-muted);
+  }
+
+  .burger {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border: 1px solid var(--border-default);
+    border-radius: 10px;
+    background-color: var(--surface-default);
+    color: var(--text-primary);
+  }
+
+  .burger:hover {
+    background-color: var(--surface-raised);
+  }
+
+  /* ---- Panneau mobile ---- */
+  .panneau {
+    position: fixed;
+    inset: var(--nav-height) 0 0;
+    z-index: 49;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 16px var(--gutter) 28px;
+    background-color: var(--bg-page);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  .panneau__liens {
+    margin: 0;
+  }
+
+  .rangee {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding-block: 20px;
+    border-block-end: 1px solid var(--separator);
+    color: var(--text-primary);
+    text-decoration: none;
+  }
+
+  .rangee__numero {
+    font-weight: var(--fw-medium);
+    font-size: 13px;
+    color: var(--text-subtle);
+  }
+
+  .rangee__libelle {
+    font-weight: var(--fw-semibold);
+    font-size: 30px;
+  }
+
+  .rangee__fleche {
+    margin-inline-start: auto;
+    font-size: 20px;
+    color: var(--text-subtle);
+  }
+
+  .rangee--actif,
+  .rangee--actif .rangee__numero,
+  .rangee--actif .rangee__fleche {
+    color: var(--accent-text);
+  }
+
+  .panneau__bas {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    padding-block-start: 32px;
+  }
+
+  .reglage {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+  }
+
+  .reglage__titre {
+    font-size: 15px;
+    color: var(--text-muted);
+  }
+
+  .segmente {
+    display: flex;
+    gap: 4px;
+    padding: 4px;
+    border: 1px solid var(--border-default);
+    border-radius: 12px;
+    background-color: var(--surface-default);
+  }
+
+  .segmente__option {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 12px;
+    border: 1px solid transparent;
+    border-radius: 9px;
+    font-size: 14px;
+    color: var(--text-muted);
+  }
+
+  .segmente__option--actif {
+    border-color: var(--border-default);
+    background-color: var(--surface-raised);
+    font-weight: var(--fw-medium);
+    color: var(--text-primary);
+  }
+
+  /* L'option active suit le theme courant, sans JavaScript. */
+  :global([data-theme='dark']) .option-sombre,
+  :global([data-theme='light']) .option-clair {
+    border-color: var(--border-default);
+    background-color: var(--surface-raised);
+    font-weight: var(--fw-medium);
+    color: var(--text-primary);
+  }
+
+  .cv-large {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding-block: 16px;
+    border-radius: 14px;
+    background-color: var(--accent-fill);
+    color: var(--accent-on);
+    font-weight: var(--fw-semibold);
+    font-size: 16px;
+    text-decoration: none;
+  }
+
+  .reseaux {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin: 0;
+  }
+
+  .puce {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    background-color: var(--chip-bg);
+  }
+
+  /* ====================================================================
+     Desktop : barre complete, plus de burger ni de panneau.
+     ==================================================================== */
+  @media (min-width: 1024px) {
+    .marque {
+      font-size: 22px;
+    }
+
+    .liens {
+      display: flex;
+      gap: 56px;
+    }
+
+    .cv,
+    .langue {
+      display: flex;
+    }
+
+    .actions {
+      gap: 10px;
+    }
+
+    .burger,
+    .panneau {
+      display: none;
+    }
+  }
+</style>
+
+<script>
+  // Menu mobile : ouverture, fermeture, Echap, et focus garde a l'interieur.
+  const bascule = document.querySelector<HTMLButtonElement>('[data-menu-bascule]');
+  const panneau = document.querySelector<HTMLElement>('[data-menu-panneau]');
+  const libelle = document.querySelector<HTMLElement>('[data-menu-libelle]');
+
+  if (bascule && panneau) {
+    const TEXTES = {
+      ouvrir: libelle?.textContent ?? 'Ouvrir le menu',
+      fermer: 'Fermer le menu',
+    };
+
+    const focusables = () =>
+      Array.from(
+        panneau.querySelectorAll<HTMLElement>(
+          'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])',
+        ),
+      ).filter((el) => el.offsetParent !== null);
+
+    const definirEtat = (ouvert: boolean) => {
+      panneau.hidden = !ouvert;
+      bascule.setAttribute('aria-expanded', String(ouvert));
+      document.body.style.overflow = ouvert ? 'hidden' : '';
+      if (libelle) libelle.textContent = ouvert ? TEXTES.fermer : TEXTES.ouvrir;
+      if (ouvert) focusables()[0]?.focus();
+      else bascule.focus();
+    };
+
+    bascule.addEventListener('click', () => {
+      // `hidden` vaut boolean | "until-found" : on force en booleen.
+      definirEtat(Boolean(panneau.hidden));
+    });
+
+    document.addEventListener('keydown', (event) => {
+      if (panneau.hidden) return;
+
+      if (event.key === 'Escape') {
+        definirEtat(false);
+        return;
+      }
+
+      if (event.key !== 'Tab') return;
+
+      // Piege a focus : on boucle entre le premier et le dernier element.
+      const cibles = focusables();
+      if (cibles.length === 0) return;
+      const premier = cibles[0]!;
+      const dernier = cibles[cibles.length - 1]!;
+
+      if (event.shiftKey && document.activeElement === premier) {
+        event.preventDefault();
+        dernier.focus();
+      } else if (!event.shiftKey && document.activeElement === dernier) {
+        event.preventDefault();
+        premier.focus();
+      }
+    });
+
+    // Repasser en desktop pendant que le menu est ouvert doit le refermer.
+    window
+      .matchMedia('(min-width: 1024px)')
+      .addEventListener('change', (event) => {
+        if (event.matches && !panneau.hidden) definirEtat(false);
+      });
+  }
+</script>

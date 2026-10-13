@@ -94,7 +94,7 @@
 @media (min-width: 1024px) {
   :root {
     --gutter: 120px;
-    --nav-height: 72px;
+    --nav-height: 84px;
   }
 }
 

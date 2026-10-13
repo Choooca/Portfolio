@@ -1,0 +1,99 @@
+---
+// Bascule de theme — composant Figma « Toggle / Thème » (2008:1499).
+// En sombre l'icone soleil propose le clair ; en clair la lune propose le sombre.
+import Icone from './Icone.astro';
+import { useTranslations, type Locale } from '../i18n';
+
+interface Props {
+  locale?: Locale;
+  class?: string;
+}
+
+const { locale = 'fr', class: className } = Astro.props;
+const t = useTranslations(locale);
+---
+
+{/*
+  L'icone ET le libelle sont permutes en CSS depuis [data-theme] : le nom
+  accessible du bouton vient du <span> reellement affiche, donc il reste
+  correct meme avant que le JavaScript ne soit charge.
+*/}
+<button type="button" class:list={['bascule', className]} data-theme-toggle>
+  <span class="sombre">
+    <Icone nom="soleil-18" />
+    <span class="visually-hidden">{t('nav.theme.sombre')}</span>
+  </span>
+  <span class="clair">
+    <Icone nom="lune-18" />
+    <span class="visually-hidden">{t('nav.theme.clair')}</span>
+  </span>
+</button>
+
+<style>
+  .bascule {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border: 1px solid var(--border-default);
+    border-radius: 10px;
+    background-color: var(--surface-default);
+    color: var(--text-primary);
+    transition: background-color 120ms ease, border-color 120ms ease;
+  }
+
+  .bascule:hover {
+    background-color: var(--surface-raised);
+  }
+
+  .bascule > span {
+    display: inline-flex;
+    align-items: center;
+  }
+
+  /*
+    Sombre -> soleil (propose le clair) ; clair -> lune (propose le sombre).
+    Le selecteur reprend `.bascule >` pour passer devant la regle ci-dessus :
+    Astro ajoute son attribut de portee a CHAQUE compose du selecteur, donc
+    `.bascule > span` pese plus qu'un `.clair` isole et gagnerait sinon.
+  */
+  :global([data-theme='dark']) .bascule > .clair,
+  :global([data-theme='light']) .bascule > .sombre {
+    display: none;
+  }
+</style>
+
+<script>
+  // Script partage par la bascule et par les boutons « Sombre / Clair » du
+  // menu mobile (data-theme-set). Le theme initial est pose par le script
+  // inline du <head> ; on ne gere ici que le changement explicite.
+  const KEY = 'theme';
+
+  function appliquer(theme: 'dark' | 'light') {
+    document.documentElement.dataset.theme = theme;
+    try {
+      localStorage.setItem(KEY, theme);
+    } catch {
+      // Navigation privee ou stockage refuse : le theme tient pour la session.
+    }
+  }
+
+  document.addEventListener('click', (event) => {
+    const cible = event.target as HTMLElement | null;
+    if (!cible) return;
+
+    const bascule = cible.closest('[data-theme-toggle]');
+    if (bascule) {
+      const actuel = document.documentElement.dataset.theme;
+      appliquer(actuel === 'light' ? 'dark' : 'light');
+      return;
+    }
+
+    const choix = cible.closest<HTMLElement>('[data-theme-set]');
+    if (choix) {
+      const valeur = choix.dataset.themeSet;
+      if (valeur === 'dark' || valeur === 'light') appliquer(valeur);
+    }
+  });
+</script>

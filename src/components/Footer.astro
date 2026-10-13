@@ -1,0 +1,232 @@
+---
+// Pied de page — Figma « Footer » (66:516) et « Footer / Mobile » (2010:2018).
+// Commun a toutes les pages : contact rapide + telechargement du CV.
+// Le lien « Contact » de la navigation fait defiler jusqu'ici.
+import { Image } from 'astro:assets';
+import Icone from './Icone.astro';
+import { href } from '../lib/url';
+import { useTranslations, type Locale } from '../i18n';
+import { LIENS } from '../lib/liens';
+import mailIcone from '../assets/icons/mail.png';
+import linkedinIcone from '../assets/icons/linkedin.png';
+import githubIcone from '../assets/icons/github.png';
+
+interface Props {
+  locale?: Locale;
+}
+
+const { locale = 'fr' } = Astro.props;
+const t = useTranslations(locale);
+
+const reseaux = [
+  { nom: 'Mail', url: LIENS.mail, image: mailIcone },
+  { nom: 'LinkedIn', url: LIENS.linkedin, image: linkedinIcone },
+  { nom: 'GitHub', url: LIENS.github, image: githubIcone },
+];
+
+const annee = new Date().getFullYear();
+---
+
+<footer class="pied" id="pied-de-page">
+  <div class="pied__haut">
+    <div class="identite">
+      <p class="identite__nom">Paul Vincensini</p>
+      <p class="identite__role">Gameplay Programmer</p>
+    </div>
+
+    <div class="pied__actions">
+      <ul class="reseaux" role="list">
+        {
+          reseaux.map((reseau) => (
+            <li>
+              <a href={reseau.url} class="puce" rel="noopener noreferrer">
+                <Image src={reseau.image} alt={reseau.nom} width={24} height={24} />
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+
+      <a class="cv" href={href(LIENS.cv)} download>
+        Télécharger mon CV
+        <Icone nom="telechargement" />
+      </a>
+    </div>
+  </div>
+
+  <hr class="separateur" />
+
+  <div class="pied__bas">
+    <p class="copyright">© {annee} Paul Vincensini</p>
+    <a class="haut" href="#contenu">
+      {t('footer.hautDePage')}
+      <Icone nom="fleche-haut" />
+    </a>
+  </div>
+</footer>
+
+<style>
+  .pied {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    padding: 40px var(--gutter) 32px;
+    background-color: var(--bg-nav);
+    border-block-start: 1px solid var(--separator);
+  }
+
+  .pied__haut {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  .identite {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .identite__nom {
+    font-weight: var(--fw-semibold);
+    font-size: 20px;
+    color: var(--text-primary);
+  }
+
+  .identite__role {
+    font-size: 14px;
+    color: var(--text-muted);
+  }
+
+  .pied__actions {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  .reseaux {
+    display: flex;
+    gap: 10px;
+    margin: 0;
+  }
+
+  .puce {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    background-color: var(--chip-bg);
+    transition: transform 120ms ease;
+  }
+
+  .puce:hover {
+    transform: translateY(-2px);
+  }
+
+  .cv {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding-block: 14px;
+    border-radius: 12px;
+    background-color: var(--accent-fill);
+    color: var(--accent-on);
+    font-weight: var(--fw-semibold);
+    font-size: 16px;
+    text-decoration: none;
+  }
+
+  .separateur {
+    width: 100%;
+    height: 1px;
+    margin: 0;
+    border: none;
+    background-color: var(--separator);
+  }
+
+  .pied__bas {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+  }
+
+  .copyright {
+    font-size: 12px;
+    color: var(--text-subtle);
+  }
+
+  .haut {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--text-muted);
+    text-decoration: none;
+  }
+
+  .haut:hover {
+    color: var(--text-primary);
+  }
+
+  /* ====================================================================
+     Desktop : tout sur une ligne, tailles de la maquette 1920.
+     ==================================================================== */
+  @media (min-width: 1024px) {
+    .pied {
+      gap: 40px;
+      padding: 56px var(--gutter) 40px;
+    }
+
+    .pied__haut {
+      flex-direction: row;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .identite {
+      gap: 6px;
+    }
+
+    .identite__nom {
+      font-size: 24px;
+    }
+
+    .identite__role {
+      font-size: 16px;
+    }
+
+    .pied__actions {
+      flex-direction: row;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .reseaux {
+      gap: 12px;
+    }
+
+    .puce {
+      width: 48px;
+      height: 48px;
+    }
+
+    /* Espace de 8px entre les puces et le bouton, comme dans la maquette. */
+    .cv {
+      margin-inline-start: 8px;
+      padding: 14px 20px;
+    }
+
+    .copyright,
+    .haut {
+      font-size: 14px;
+    }
+
+    .haut {
+      gap: 8px;
+    }
+  }
+</style>

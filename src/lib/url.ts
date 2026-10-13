@@ -14,9 +14,21 @@ export function href(path: string): string {
   return `${base}${suffix}`;
 }
 
-/** URL absolue, pour les balises canonical et Open Graph. */
+/**
+ * URL absolue a partir d'un chemin SANS le prefixe (ex. '/favicon.svg').
+ * Le `base` est ajoute au passage.
+ */
 export function absoluteUrl(path: string, site: URL | undefined): string {
   return new URL(href(path), site ?? 'http://localhost:4321').toString();
+}
+
+/**
+ * URL absolue a partir d'un chemin qui porte DEJA le prefixe — typiquement
+ * `Astro.url.pathname`. Ne pas utiliser `absoluteUrl()` ici : le `base`
+ * serait applique une seconde fois (`/Portfolio/Portfolio/`).
+ */
+export function canonicalUrl(pathname: string, site: URL | undefined): string {
+  return new URL(pathname, site ?? 'http://localhost:4321').toString();
 }
 
 /** `true` si `path` correspond a la page courante (lien actif de la nav). */
