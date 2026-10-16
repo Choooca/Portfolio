@@ -108,6 +108,15 @@
   box-sizing: border-box;
 }
 
+/*
+  L'attribut `hidden` vaut `display: none` dans la feuille du navigateur, avec
+  une specificite quasi nulle : le moindre `display` d'auteur l'ecrase et
+  l'element reste visible. On lui redonne la priorite une fois pour toutes.
+*/
+[hidden] {
+  display: none !important;
+}
+
 * {
   margin: 0;
 }
