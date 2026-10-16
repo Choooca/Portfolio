@@ -1,0 +1,366 @@
+---
+// Carte projet — Figma « Card / Projet » (66:575) et sa variante compacte
+// « Card / Projet — Compact » (2008:1545).
+//
+// Un seul balisage pour les deux : la carte est compacte sous 640px (liste
+// mobile) et complete au-dessus (grille). Rendre les deux variantes puis en
+// masquer une dupliquerait les liens dans le DOM.
+import { Image } from 'astro:assets';
+import type { CollectionEntry } from 'astro:content';
+import Tag from './Tag.astro';
+import Icone from './Icone.astro';
+import { href } from '../lib/url';
+import { pick, useTranslations, type Locale } from '../i18n';
+
+interface Props {
+  projet: CollectionEntry<'projets'>;
+  locale?: Locale;
+}
+
+const { projet, locale = 'fr' } = Astro.props;
+const t = useTranslations(locale);
+const d = projet.data;
+
+const genre = pick(d.genre, d.genre_en, locale);
+
+// Le premier media sert de vignette ; une video affiche son poster.
+const premier = d.medias[0]!;
+const vignette = premier.type === 'image' ? premier.src : premier.poster;
+const legende = pick(premier.legende, premier.legende_en, locale);
+
+// 3 pastilles au maximum : une par dimension (le detail va sur la fiche).
+type Pastille = { kind: 'domaine' | 'moteur' | 'langage'; label: string };
+
+const pastilles: Pastille[] = [];
+if (d.domaine[0]) pastilles.push({ kind: 'domaine', label: d.domaine[0] });
+if (d.moteur) pastilles.push({ kind: 'moteur', label: d.moteur });
+if (d.langage[0]) pastilles.push({ kind: 'langage', label: d.langage[0] });
+---
+
+<article class="carte" data-apercu={d.apercu}>
+  <div class="media">
+    {
+      vignette ? (
+        <Image
+          class="media__image"
+          src={vignette}
+          alt={legende}
+          widths={[88, 402, 804]}
+          sizes="(max-width: 639px) 88px, 402px"
+        />
+      ) : (
+        <Icone nom="media-placeholder" class="media__vide" />
+      )
+    }
+
+    {/*
+      Aperçu video : le markup n'existe que si le projet a une video.
+      Le fichier n'est telecharge qu'au premier survol (voir le script).
+    */}
+    {
+      d.apercu && (
+        <>
+          <span class="badge" hidden data-apercu-badge>
+            <Icone nom="lecture" />
+            {t('media.apercu')}
+          </span>
+          <span class="progression" hidden data-apercu-progression>
+            <span class="progression__valeur"></span>
+          </span>
+        </>
+      )
+    }
+  </div>
+
+  <div class="corps">
+    <div class="info">
+      {/*
+        Seul le titre est un lien ; son ::after couvre toute la carte pour
+        la rendre cliquable. Les pastilles repassent au-dessus, ce qui
+        permettra de les rendre cliquables sans imbriquer deux interactifs.
+      */}
+      <h3 class="titre">
+        <a href={href(`/projets/${projet.id}`)}>{d.titre}</a>
+      </h3>
+      <p class="genre">{genre}</p>
+    </div>
+
+    <ul class="pastilles" role="list">
+      {
+        pastilles.map((p) => (
+          <li>
+            {/* TODO(filtres) : passer `interactif` a true pour filtrer au clic. */}
+            <Tag kind={p.kind} label={p.label} interactif={false} />
+          </li>
+        ))
+      }
+    </ul>
+  </div>
+</article>
+
+<style>
+  /* ====================================================================
+     Mobile (< 640px) : variante compacte, image a gauche.
+     ==================================================================== */
+  .carte {
+    position: relative;
+    display: flex;
+    gap: 14px;
+    align-items: center;
+    padding: 12px;
+    border: 1px solid var(--border-default);
+    border-radius: 16px;
+    background-color: var(--surface-default);
+    transition: border-color 140ms ease, box-shadow 140ms ease;
+  }
+
+  .media {
+    position: relative;
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    width: 88px;
+    height: 66px;
+    overflow: hidden;
+    border-radius: 10px;
+    background-color: var(--media-placeholder);
+    color: var(--media-placeholder-icon);
+  }
+
+  .media__image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .media__vide {
+    width: 24px;
+    height: 24px;
+  }
+
+  .corps {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+  }
+
+  .info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+  }
+
+  .titre {
+    font-weight: var(--fw-semibold);
+    font-size: 16px;
+    line-height: 1.25;
+    color: var(--text-primary);
+  }
+
+  .titre a {
+    text-decoration: none;
+  }
+
+  /* Toute la carte devient cliquable sans imbriquer de lien. */
+  .titre a::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+  }
+
+  .genre {
+    font-weight: var(--fw-light);
+    font-size: 13px;
+    color: var(--text-muted);
+  }
+
+  .pastilles {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin: 0;
+    padding-block-start: 6px;
+  }
+
+  /* ====================================================================
+     Tablette et desktop (>= 640px) : carte complete, image en haut.
+     ==================================================================== */
+  @media (min-width: 640px) {
+    .carte {
+      flex-direction: column;
+      gap: 16px;
+      align-items: stretch;
+      padding: 14px 14px 20px;
+      border-radius: 20px;
+    }
+
+    .media {
+      width: 100%;
+      height: 234px;
+      border-radius: 14px;
+    }
+
+    .media__vide {
+      width: 44px;
+      height: 44px;
+    }
+
+    /* Le corps occupe la hauteur restante et pousse les pastilles en bas,
+       pour que les cartes d'une meme ligne s'alignent. */
+    .corps {
+      flex: 1;
+      gap: 16px;
+    }
+
+    .pastilles {
+      margin-block-start: auto;
+    }
+
+    .info {
+      gap: 6px;
+    }
+
+    .titre {
+      font-size: 20px;
+    }
+
+    .genre {
+      font-size: 15px;
+    }
+
+    .pastilles {
+      padding-block-start: 0;
+    }
+  }
+
+  /* Survol : bordure accent et ombre portee (etat Hover de la maquette). */
+  @media (hover: hover) {
+    .carte:hover {
+      border-color: var(--accent-fill);
+      box-shadow: 0 20px 24px rgb(0 0 0 / 0.55);
+    }
+
+    .carte:hover .media {
+      background-color: var(--media-placeholder-hover);
+    }
+  }
+
+  /* Le focus clavier sur le titre doit encadrer la carte entiere. */
+  .carte:has(.titre a:focus-visible) {
+    outline: 2px solid var(--accent-fill);
+    outline-offset: 4px;
+  }
+
+  .titre a:focus-visible {
+    outline: none;
+  }
+
+  /* ---- Aperçu video ---- */
+  .media :global(video) {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .badge {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    z-index: 1;
+    display: inline-flex;
+    gap: 6px;
+    align-items: center;
+    padding: 5px 10px;
+    border-radius: 999px;
+    background-color: rgb(0 0 0 / 0.6);
+    color: #fff;
+    font-weight: var(--fw-medium);
+    font-size: 11px;
+    letter-spacing: 1.32px;
+    text-transform: uppercase;
+  }
+
+  .progression {
+    position: absolute;
+    right: 10px;
+    bottom: 11px;
+    left: 12px;
+    z-index: 1;
+    height: 3px;
+    overflow: hidden;
+    border-radius: 2px;
+    background-color: var(--line-default);
+  }
+
+  .progression__valeur {
+    display: block;
+    width: 0;
+    height: 100%;
+    border-radius: 2px;
+    background-color: var(--accent-fill);
+  }
+</style>
+
+<script>
+  // Aperçu video au survol : rien n'est telecharge avant le premier survol.
+  // Desactive au toucher et si le visiteur a demande moins d'animations.
+  const survolPossible = window.matchMedia('(hover: hover)').matches;
+  const animationsReduites = window.matchMedia(
+    '(prefers-reduced-motion: reduce)',
+  ).matches;
+
+  if (survolPossible && !animationsReduites) {
+    for (const carte of document.querySelectorAll<HTMLElement>(
+      '.carte[data-apercu]',
+    )) {
+      const source = carte.dataset.apercu;
+      if (!source) continue;
+
+      const media = carte.querySelector<HTMLElement>('.media');
+      const badge = carte.querySelector<HTMLElement>('[data-apercu-badge]');
+      const barre = carte.querySelector<HTMLElement>('[data-apercu-progression]');
+      const valeur = barre?.firstElementChild as HTMLElement | null;
+      if (!media) continue;
+
+      let video: HTMLVideoElement | null = null;
+
+      carte.addEventListener('mouseenter', () => {
+        if (!video) {
+          video = document.createElement('video');
+          video.src = source;
+          video.muted = true;
+          video.loop = true;
+          video.playsInline = true;
+          video.preload = 'auto';
+          video.addEventListener('timeupdate', () => {
+            if (!valeur || !video?.duration) return;
+            valeur.style.width = `${(video.currentTime / video.duration) * 100}%`;
+          });
+          media.append(video);
+        }
+        if (badge) badge.hidden = false;
+        if (barre) barre.hidden = false;
+        void video.play().catch(() => {
+          // Lecture refusee par le navigateur : on garde l'image.
+        });
+      });
+
+      carte.addEventListener('mouseleave', () => {
+        video?.pause();
+        if (video) video.currentTime = 0;
+        if (valeur) valeur.style.width = '0';
+        if (badge) badge.hidden = true;
+        if (barre) barre.hidden = true;
+      });
+    }
+  }
+</script>

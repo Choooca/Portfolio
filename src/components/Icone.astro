@@ -19,7 +19,9 @@ interface Props {
     | 'lune-16'
     | 'burger'
     | 'telechargement'
-    | 'fleche-haut';
+    | 'fleche-haut'
+    | 'media-placeholder'
+    | 'lecture';
   class?: string;
 }
 
@@ -74,6 +76,23 @@ const { nom, class: className } = Astro.props;
   nom === 'fleche-haut' && (
     <svg class={className} width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true" focusable="false">
       <path d="M6 10.5V1.5M10 5.5L6 1.5L2 5.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+    </svg>
+  )
+}
+
+{
+  nom === 'media-placeholder' && (
+    <svg class={className} width="44" height="44" viewBox="0 0 44 44" fill="none" aria-hidden="true" focusable="false">
+      <path d="M10.0833 7.33333H33.9167C36.448 7.33333 38.5 9.38536 38.5 11.9167V32.0833C38.5 34.6146 36.448 36.6667 33.9167 36.6667H10.0833C7.55203 36.6667 5.5 34.6146 5.5 32.0833V11.9167C5.5 9.38536 7.55203 7.33333 10.0833 7.33333Z" stroke="currentColor" stroke-width="2.75" />
+      <path d="M19.8 17.4167C19.8 19.2392 18.3225 20.7167 16.5 20.7167C14.6775 20.7167 13.2 19.2392 13.2 17.4167C13.2 15.5941 14.6775 14.1167 16.5 14.1167C18.3225 14.1167 19.8 15.5941 19.8 17.4167Z" stroke="currentColor" stroke-width="2.75" />
+      <path d="M6.41667 32.0833L15.95 22.9167L22.9167 29.5167L27.6833 25.1167L37.5833 33.9167" stroke="currentColor" stroke-width="2.75" stroke-linejoin="round" />
+    </svg>
+  )
+}
+{
+  nom === 'lecture' && (
+    <svg class={className} width="9" height="10" viewBox="0 0 9 10" fill="none" aria-hidden="true" focusable="false">
+      <path d="M1 1.2V8.8C1.00336 8.90365 1.03353 9.00466 1.08756 9.09318C1.14159 9.1817 1.21764 9.2547 1.3083 9.30506C1.39895 9.35542 1.50112 9.38143 1.60482 9.38054C1.70852 9.37966 1.81022 9.35191 1.9 9.3L8.3 5.5C8.38251 5.44527 8.45019 5.37097 8.49701 5.28373C8.54383 5.19649 8.56834 5.09901 8.56834 5C8.56834 4.90099 8.54383 4.80351 8.49701 4.71627C8.45019 4.62903 8.38251 4.55473 8.3 4.5L1.9 0.7C1.81022 0.648093 1.70852 0.620342 1.60482 0.619455C1.50112 0.618568 1.39895 0.644575 1.3083 0.694939C1.21764 0.745303 1.14159 0.818304 1.08756 0.906821C1.03353 0.995338 1.00336 1.09635 1 1.2Z" fill="currentColor" />
     </svg>
   )
 }

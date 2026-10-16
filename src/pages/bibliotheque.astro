@@ -1,0 +1,242 @@
+---
+// Bibliotheque — Figma « Screen / Bibliothèque » (58:5) et
+// « Mobile / Bibliothèque » (2010:1589).
+//
+// Cette version pose les sections et les cartes. La barre de filtres
+// (menus Domaine / Moteur / Langage, filtres actifs, compteur « X sur Y »)
+// et les etats vides viendront ensuite.
+import { getCollection } from 'astro:content';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import ProjectCard from '../components/ProjectCard.astro';
+import { SECTIONS, type Section } from '../content.config';
+import { useTranslations, DEFAULT_LOCALE, type TranslationKey } from '../i18n';
+
+const locale = DEFAULT_LOCALE;
+const t = useTranslations(locale);
+
+const projets = await getCollection('projets');
+
+/**
+ * Tri d'une section : `ordre` d'abord quand il est renseigne, puis ordre
+ * alphabetique sur le titre.
+ */
+function trier(a: (typeof projets)[number], b: (typeof projets)[number]) {
+  const oa = a.data.ordre;
+  const ob = b.data.ordre;
+  if (oa !== undefined && ob !== undefined) return oa - ob;
+  if (oa !== undefined) return -1;
+  if (ob !== undefined) return 1;
+  return a.data.titre.localeCompare(b.data.titre, 'fr');
+}
+
+// Les trois sections sont fixes et toujours affichees, dans cet ordre,
+// meme vides.
+const sections = SECTIONS.map((cle: Section) => ({
+  cle,
+  titre: t(`bib.section.${cle}` as TranslationKey),
+  description: t(`bib.section.${cle}.desc` as TranslationKey),
+  projets: projets.filter((p) => p.data.section === cle).sort(trier),
+}));
+---
+
+<BaseLayout titre={t('bib.titre')} description={t('bib.sousTitre')} locale={locale}>
+  <header class="entete wrapper">
+    <h1>{t('bib.titre')}</h1>
+    <p class="sous-titre">{t('bib.sousTitre')}</p>
+  </header>
+
+  <div class="contenu wrapper">
+    {
+      sections.map((section) => (
+        <section class="section" aria-labelledby={`section-${section.cle}`}>
+          <div class="section__entete">
+            <h2 id={`section-${section.cle}`}>{section.titre}</h2>
+            <span class="compteur">{section.projets.length}</span>
+            <hr class="filet" />
+            <p class="description">{section.description}</p>
+          </div>
+
+          <ul class="grille" role="list">
+            {section.projets.map((projet) => (
+              <li>
+                <ProjectCard projet={projet} locale={locale} />
+              </li>
+            ))}
+          </ul>
+        </section>
+      ))
+    }
+  </div>
+</BaseLayout>
+
+<style>
+  /* ---- En-tete de page ---- */
+  .entete {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding-block: 32px 24px;
+  }
+
+  h1 {
+    font-weight: var(--fw-semibold);
+    font-size: 36px;
+    letter-spacing: -0.36px;
+    color: var(--text-primary);
+  }
+
+  .sous-titre {
+    font-weight: var(--fw-light);
+    font-size: 15px;
+    line-height: 1.5;
+    color: var(--text-muted);
+  }
+
+  /* ---- Sections ---- */
+  .contenu {
+    display: flex;
+    flex-direction: column;
+    gap: 48px;
+    padding-block: 32px 64px;
+  }
+
+  .section {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .section__entete {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 10px;
+    align-items: center;
+  }
+
+  h2 {
+    font-weight: var(--fw-semibold);
+    font-size: 24px;
+    letter-spacing: -0.24px;
+    color: var(--text-primary);
+  }
+
+  .compteur {
+    padding: 3px 9px;
+    border: 1px solid var(--border-default);
+    border-radius: 999px;
+    background-color: var(--surface-raised);
+    font-weight: var(--fw-medium);
+    font-size: 13px;
+    color: var(--text-muted);
+  }
+
+  /* Le filet ne separe les deux textes qu'a partir du desktop. */
+  .filet {
+    display: none;
+    flex: 1;
+    height: 1px;
+    min-width: 0;
+    margin: 0;
+    border: none;
+    background-color: var(--separator);
+  }
+
+  .description {
+    flex-basis: 100%;
+    font-weight: var(--fw-light);
+    font-size: 13px;
+    color: var(--text-muted);
+  }
+
+  /* ---- Grille ---- */
+  .grille {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 12px;
+    margin: 0;
+  }
+
+  /* Les cartes d'une meme ligne gardent la meme hauteur, quel que soit le
+     nombre de lignes de leur titre ou de leurs pastilles. */
+  .grille > li {
+    display: flex;
+  }
+
+  .grille > li > :global(.carte) {
+    width: 100%;
+  }
+
+  /* Section sans projet : on ne laisse pas l'espace de la grille vide.
+     TODO(filtres) : afficher ici le message « Aucun projet ne correspond
+     aux filtres actifs dans cette section ». */
+  .grille:empty {
+    display: none;
+  }
+
+  /* ====================================================================
+     Tablette : 2 cartes par ligne.
+     ==================================================================== */
+  @media (min-width: 640px) {
+    .grille {
+      grid-template-columns: repeat(2, 1fr);
+      gap: 24px;
+    }
+  }
+
+  /* ====================================================================
+     Desktop : 4 cartes par ligne, en-tetes de la maquette 1920.
+     ==================================================================== */
+  @media (min-width: 1024px) {
+    .entete {
+      gap: 16px;
+      padding-block: 96px 48px;
+    }
+
+    h1 {
+      font-size: 72px;
+      letter-spacing: -1.44px;
+    }
+
+    .sous-titre {
+      font-size: 22px;
+    }
+
+    .contenu {
+      gap: 96px;
+      padding-block: 72px 140px;
+    }
+
+    .section {
+      gap: 32px;
+    }
+
+    .section__entete {
+      flex-wrap: nowrap;
+      gap: 16px;
+    }
+
+    h2 {
+      font-size: 36px;
+      letter-spacing: -0.36px;
+    }
+
+    .compteur {
+      padding: 4px 10px;
+      font-size: 14px;
+    }
+
+    .filet {
+      display: block;
+    }
+
+    .description {
+      flex-basis: auto;
+      font-size: 16px;
+      white-space: nowrap;
+    }
+
+    .grille {
+      grid-template-columns: repeat(4, 1fr);
+    }
+  }
+</style>

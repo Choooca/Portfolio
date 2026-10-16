@@ -35,7 +35,10 @@ function servir() {
     const serveur = createServer(async (req, res) => {
       let chemin = decodeURIComponent((req.url ?? '/').split('?')[0]);
       if (chemin.startsWith(BASE)) chemin = chemin.slice(BASE.length);
+      // Astro produit des dossiers (/bibliotheque/index.html) : tout chemin
+      // sans extension est resolu vers son index.
       if (chemin === '' || chemin.endsWith('/')) chemin += 'index.html';
+      else if (!extname(chemin)) chemin += '/index.html';
 
       const fichier = join(RACINE, normalize(chemin).replace(/^(\.\.[/\\])+/, ''));
       try {
@@ -52,9 +55,14 @@ function servir() {
   });
 }
 
-const PAGES = [{ nom: 'accueil', chemin: '/' }];
+const PAGES = [
+  { nom: 'accueil', chemin: '/' },
+  { nom: 'bibliotheque', chemin: '/bibliotheque' },
+];
 
 const FORMATS = [
+  // 1920 = largeur de la maquette Figma, pour comparer a l'identique.
+  { nom: 'large', largeur: 1920, hauteur: 1080 },
   { nom: 'desktop', largeur: 1440, hauteur: 900 },
   { nom: 'mobile', largeur: 390, hauteur: 844 },
 ];
@@ -93,7 +101,7 @@ for (const page of PAGES) {
       faites.push(nom);
 
       // En mobile, on capture aussi le menu burger ouvert.
-      if (format.nom === 'mobile') {
+      if (format.nom === 'mobile' && page.nom === 'accueil') {
         await onglet.click('[data-menu-bascule]');
         await onglet.waitForTimeout(250);
         const nomMenu = `${page.nom}-menu-ouvert-${theme}.png`;
