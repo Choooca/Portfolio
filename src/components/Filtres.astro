@@ -1,0 +1,869 @@
+---
+// Filtres de la Bibliotheque — Figma « Filter bar » (59:374),
+// « Active filters » (59:801), « Dropdown panel » (59:808),
+// « Bottom sheet » (2010:2103) et « Filter bar » mobile (2010:2046).
+//
+// Regle : OU dans un groupe, ET entre les groupes. L'etat vit dans l'URL.
+// Sans JavaScript, la barre s'affiche mais reste inerte et toutes les cartes
+// restent visibles — c'est le comportement prevu par le document.
+import Icone from './Icone.astro';
+import Tag from './Tag.astro';
+import { GROUPES, type Groupe } from '../lib/filtres';
+import { useTranslations, type Locale } from '../i18n';
+
+export interface Option {
+  libelle: string;
+  valeur: string;
+  nombre: number;
+}
+
+interface Props {
+  /** Options par groupe, deja triees et sans les valeurs a zero projet. */
+  options: Record<Groupe, Option[]>;
+  total: number;
+  locale?: Locale;
+}
+
+const { options, total, locale = 'fr' } = Astro.props;
+const t = useTranslations(locale);
+
+const titreGroupe: Record<Groupe, string> = {
+  domaine: t('bib.filtres.domaine'),
+  moteur: t('bib.filtres.moteur'),
+  langage: t('bib.filtres.langage'),
+};
+
+// Un groupe sans aucune option n'a pas de menu a afficher.
+const groupesUtiles = GROUPES.filter((g) => options[g].length > 0);
+---
+
+<div class="barre" data-filtres>
+  {/* ---- Barre collante ---- */}
+  <div class="barre__contenu wrapper">
+    {/* Desktop : un menu deroulant par groupe. */}
+    <div class="menus">
+      <p class="menus__titre">{t('bib.filtres').toUpperCase()}</p>
+      {
+        groupesUtiles.map((groupe) => (
+          <div class="menu" data-menu={groupe}>
+            <button
+              type="button"
+              class="menu__bouton"
+              aria-expanded="false"
+              aria-controls={`panneau-${groupe}`}
+              data-menu-bouton
+            >
+              {titreGroupe[groupe]}
+              <span class="menu__badge" hidden data-menu-badge>0</span>
+              <span class="menu__chevron menu__chevron--bas"><Icone nom="chevron-bas" /></span>
+              <span class="menu__chevron menu__chevron--haut"><Icone nom="chevron-haut" /></span>
+            </button>
+
+            <div class="panneau" id={`panneau-${groupe}`} hidden data-menu-panneau>
+              {options[groupe].map((option) => (
+                <button
+                  type="button"
+                  class="option"
+                  role="checkbox"
+                  aria-checked="false"
+                  data-option
+                  data-groupe={groupe}
+                  data-valeur={option.valeur}
+                >
+                  <span class="option__gauche">
+                    <span class="case" aria-hidden="true">
+                      <Icone nom="coche" />
+                    </span>
+                    <span class="option__libelle">{option.libelle}</span>
+                  </span>
+                  <span class="option__nombre">{option.nombre}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        ))
+      }
+    </div>
+
+    {/* Mobile : un bouton qui ouvre le panneau du bas. */}
+    <button
+      type="button"
+      class="bouton-filtres"
+      aria-expanded="false"
+      aria-controls="panneau-filtres"
+      data-feuille-ouvrir
+    >
+      <Icone nom="filtres" />
+      {t('bib.filtres')}
+      <span class="bouton-filtres__badge" hidden data-feuille-badge>0</span>
+    </button>
+
+    <p class="compteur" data-compteur aria-live="polite">
+      {t('bib.compteur', { n: total, total })}
+    </p>
+  </div>
+
+  {/* ---- Filtres actifs ---- */}
+  <div class="actifs wrapper" hidden data-actifs>
+    <p class="actifs__titre">{t('bib.filtres.actifs').toUpperCase()}</p>
+    <ul class="actifs__liste" role="list" data-actifs-liste></ul>
+    <button type="button" class="reinitialiser" data-reinitialiser>
+      Réinitialiser
+    </button>
+  </div>
+</div>
+
+{/* ---- Panneau du bas (mobile) ---- */}
+<div class="voile" hidden data-feuille-voile></div>
+<div
+  class="feuille"
+  id="panneau-filtres"
+  role="dialog"
+  aria-modal="true"
+  aria-label={t('bib.filtres')}
+  hidden
+  data-feuille
+>
+  <div class="feuille__poignee-zone">
+    <span class="feuille__poignee" aria-hidden="true"></span>
+  </div>
+
+  <div class="feuille__entete">
+    <h2>{t('bib.filtres')}</h2>
+    <button type="button" class="reinitialiser" data-reinitialiser>Réinitialiser</button>
+  </div>
+
+  {
+    groupesUtiles.map((groupe) => (
+      <div class="groupe">
+        <p class="groupe__titre">{titreGroupe[groupe].toUpperCase()}</p>
+        <ul class="groupe__options" role="list">
+          {options[groupe].map((option) => (
+            <li>
+              <Tag kind={groupe} label={option.libelle} />
+            </li>
+          ))}
+        </ul>
+      </div>
+    ))
+  }
+
+  <button type="button" class="appliquer" data-feuille-appliquer>
+    <span data-feuille-appliquer-texte>{t('bib.voirN', { n: total })}</span>
+  </button>
+</div>
+
+<style>
+  /* ====================================================================
+     Barre collante, sous la navigation.
+     ==================================================================== */
+  .barre {
+    position: sticky;
+    top: var(--nav-height);
+    z-index: 40;
+    background-color: var(--bg-band);
+    border-block: 1px solid var(--separator);
+  }
+
+  .barre__contenu {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding-block: 12px;
+  }
+
+  /* ---- Menus deroulants : desktop seulement ---- */
+  .menus {
+    display: none;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .menus__titre {
+    margin-inline-end: 8px;
+    font-weight: var(--fw-medium);
+    font-size: 13px;
+    letter-spacing: 1.95px;
+    color: var(--text-subtle);
+  }
+
+  .menu {
+    position: relative;
+  }
+
+  .menu__bouton {
+    display: inline-flex;
+    gap: 12px;
+    align-items: center;
+    padding: 10px 16px;
+    border: 1px solid var(--border-default);
+    border-radius: 12px;
+    background-color: var(--surface-default);
+    color: var(--text-primary);
+    font-size: 16px;
+    white-space: nowrap;
+  }
+
+  .menu__bouton[aria-expanded='true'],
+  .menu__bouton:has(.menu__badge:not([hidden])) {
+    border-color: var(--accent-fill);
+    background-color: var(--surface-raised);
+  }
+
+  .menu__badge {
+    padding: 1px 7px;
+    border-radius: 999px;
+    background-color: var(--accent-fill);
+    color: var(--accent-on);
+    font-weight: var(--fw-semibold);
+    font-size: 13px;
+  }
+
+  /* Enveloppes indispensables : une classe passee en prop a <Icone> porte
+     la portee d'Icone, pas celle de ce fichier, donc une regle ciblant
+     directement le svg ne s'appliquerait jamais. */
+  .menu__chevron {
+    display: inline-flex;
+    color: var(--text-muted);
+  }
+
+  .menu__chevron--haut {
+    display: none;
+    color: var(--accent-fill);
+  }
+
+  .menu__bouton[aria-expanded='true'] .menu__chevron--bas {
+    display: none;
+  }
+
+  .menu__bouton[aria-expanded='true'] .menu__chevron--haut {
+    display: block;
+  }
+
+  /* ---- Panneau d'un menu ---- */
+  .panneau {
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 0;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 240px;
+    padding: 8px;
+    border: 1px solid var(--border-default);
+    border-radius: 16px;
+    background-color: var(--surface-raised);
+    box-shadow: 0 16px 40px rgb(0 0 0 / 0.55);
+  }
+
+  .option {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    width: 100%;
+    padding: 10px 12px;
+    border-radius: 10px;
+    text-align: start;
+  }
+
+  .option[aria-checked='true'] {
+    background-color: color-mix(in srgb, var(--line-default) 7%, transparent);
+  }
+
+  .option:hover {
+    background-color: color-mix(in srgb, var(--line-default) 4%, transparent);
+  }
+
+  .option__gauche {
+    display: inline-flex;
+    gap: 12px;
+    align-items: center;
+  }
+
+  .case {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    border: 1px solid var(--media-placeholder-icon);
+    border-radius: 5px;
+    color: var(--accent-on);
+  }
+
+  /* La coche n'apparait qu'une fois l'option cochee. */
+  .case > :global(svg) {
+    visibility: hidden;
+  }
+
+  .option[aria-checked='true'] .case {
+    border-color: var(--accent-fill);
+    background-color: var(--accent-fill);
+  }
+
+  .option[aria-checked='true'] .case > :global(svg) {
+    visibility: visible;
+  }
+
+  .option__libelle {
+    font-size: 16px;
+    color: var(--text-muted);
+  }
+
+  .option[aria-checked='true'] .option__libelle {
+    font-weight: var(--fw-medium);
+    color: var(--text-primary);
+  }
+
+  .option__nombre {
+    font-size: 14px;
+    color: var(--text-subtle);
+  }
+
+  /* ---- Bouton Filtres (mobile) ---- */
+  .bouton-filtres {
+    display: inline-flex;
+    gap: 10px;
+    align-items: center;
+    padding: 10px 16px 10px 14px;
+    border: 1px solid var(--border-default);
+    border-radius: 12px;
+    background-color: var(--surface-default);
+    color: var(--text-primary);
+    font-weight: var(--fw-medium);
+    font-size: 15px;
+  }
+
+  .bouton-filtres__badge {
+    padding: 1px 7px;
+    border-radius: 999px;
+    background-color: var(--accent-fill);
+    color: var(--accent-on);
+    font-weight: var(--fw-semibold);
+    font-size: 13px;
+  }
+
+  .compteur {
+    font-size: 14px;
+    color: var(--text-muted);
+    white-space: nowrap;
+  }
+
+  /* ---- Filtres actifs ---- */
+  .actifs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: center;
+    padding-block: 16px;
+    border-block-start: 1px solid var(--separator);
+  }
+
+  .actifs__titre {
+    font-weight: var(--fw-medium);
+    font-size: 13px;
+    letter-spacing: 1.95px;
+    color: var(--text-subtle);
+  }
+
+  .actifs__liste {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 0;
+  }
+
+  .reinitialiser {
+    font-size: 14px;
+    color: var(--text-muted);
+    text-decoration: underline;
+    text-underline-offset: 0.25em;
+  }
+
+  .reinitialiser:hover {
+    color: var(--text-primary);
+  }
+
+  /* ====================================================================
+     Panneau du bas (mobile)
+     ==================================================================== */
+  .voile {
+    position: fixed;
+    inset: 0;
+    z-index: 60;
+    background-color: rgb(0 0 0 / 0.5);
+  }
+
+  .feuille {
+    position: fixed;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 61;
+    display: flex;
+    flex-direction: column;
+    gap: 22px;
+    max-height: 85vh;
+    padding: 12px var(--gutter) 24px;
+    overflow-y: auto;
+    border-block-start: 1px solid var(--border-default);
+    border-start-start-radius: 24px;
+    border-start-end-radius: 24px;
+    background-color: var(--surface-default);
+    overscroll-behavior: contain;
+  }
+
+  .feuille__poignee-zone {
+    display: flex;
+    justify-content: center;
+  }
+
+  .feuille__poignee {
+    width: 40px;
+    height: 4px;
+    border-radius: 2px;
+    background-color: var(--text-subtle);
+  }
+
+  .feuille__entete {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+  }
+
+  .feuille__entete h2 {
+    font-weight: var(--fw-semibold);
+    font-size: 22px;
+    color: var(--text-primary);
+  }
+
+  .groupe {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .groupe__titre {
+    font-weight: var(--fw-medium);
+    font-size: 11px;
+    letter-spacing: 1.65px;
+    color: var(--text-subtle);
+  }
+
+  .groupe__options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 0;
+  }
+
+  .appliquer {
+    padding-block: 16px;
+    border-radius: 14px;
+    background-color: var(--accent-fill);
+    color: var(--accent-on);
+    font-weight: var(--fw-semibold);
+    font-size: 16px;
+  }
+
+  /* ====================================================================
+     Desktop : menus visibles, bouton mobile et panneau du bas retires.
+     ==================================================================== */
+  @media (min-width: 1024px) {
+    .barre__contenu {
+      padding-block: 18px;
+    }
+
+    .menus {
+      display: flex;
+    }
+
+    .bouton-filtres,
+    .feuille,
+    .voile {
+      display: none;
+    }
+
+    .compteur {
+      font-size: 16px;
+    }
+  }
+</style>
+
+<script>
+  import {
+    GROUPES,
+    type Groupe,
+    type EtatFiltres,
+    lireUrl,
+    ecrireUrl,
+    etatVide,
+    estVide,
+    correspond,
+    basculer,
+    valeursDeLElement,
+  } from '../lib/filtres';
+
+  const racine = document.querySelector<HTMLElement>('[data-filtres]');
+  const feuille = document.querySelector<HTMLElement>('[data-feuille]');
+  const voile = document.querySelector<HTMLElement>('[data-feuille-voile]');
+
+  if (racine) {
+    const cartes = Array.from(
+      document.querySelectorAll<HTMLElement>('[data-carte]'),
+    );
+    const sections = Array.from(
+      document.querySelectorAll<HTMLElement>('[data-section]'),
+    );
+    const compteur = racine.querySelector<HTMLElement>('[data-compteur]');
+    const zoneActifs = racine.querySelector<HTMLElement>('[data-actifs]');
+    const listeActifs = racine.querySelector<HTMLElement>('[data-actifs-liste]');
+    const videGlobal = document.querySelector<HTMLElement>('[data-vide-global]');
+    const total = cartes.length;
+
+    const libelles = new Map<string, string>();
+    const titresGroupe: Record<Groupe, string> = {
+      domaine: 'Domaine',
+      moteur: 'Moteur',
+      langage: 'Langage',
+    };
+
+    for (const option of racine.querySelectorAll<HTMLElement>('[data-option]')) {
+      const g = option.dataset.groupe!;
+      const v = option.dataset.valeur!;
+      const texte = option.querySelector('.option__libelle')?.textContent ?? v;
+      libelles.set(`${g}:${v}`, texte);
+    }
+
+    // `etatApplique` pilote la page ; `etatBrouillon` sert au panneau mobile,
+    // ou les choix n'agissent qu'au clic sur « Voir N projets ».
+    let etatApplique: EtatFiltres = lireUrl(location.search);
+    let etatBrouillon: EtatFiltres = structuredClone(etatApplique);
+
+    function compte(etat: EtatFiltres) {
+      return cartes.filter((c) => correspond(valeursDeLElement(c), etat)).length;
+    }
+
+    function rendre(etat: EtatFiltres, poussserUrl: boolean) {
+      let visibles = 0;
+
+      for (const carte of cartes) {
+        const ok = correspond(valeursDeLElement(carte), etat);
+        // On masque l'element de liste, pas la carte, pour que la grille
+        // ne garde pas de case vide.
+        const hote = carte.closest('li') ?? carte;
+        hote.hidden = !ok;
+        if (ok) visibles++;
+      }
+
+      // Compteur et etat vide de chaque section.
+      for (const section of sections) {
+        const n = Array.from(
+          section.querySelectorAll<HTMLElement>('[data-carte]'),
+        ).filter((c) => correspond(valeursDeLElement(c), etat)).length;
+
+        const badge = section.querySelector<HTMLElement>('[data-section-compteur]');
+        if (badge) badge.textContent = String(n);
+
+
+        const grille = section.querySelector<HTMLElement>('[data-grille]');
+        if (grille) grille.hidden = n === 0;
+      }
+
+      // Aucun resultat du tout : les sections cedent la place a l'etat vide.
+      const aucun = visibles === 0 && !estVide(etat);
+      if (videGlobal) videGlobal.hidden = !aucun;
+      for (const section of sections) section.hidden = aucun;
+
+      // Compteur global.
+      if (compteur) {
+        compteur.textContent = estVide(etat)
+          ? `${total} projets`
+          : `${visibles} projets sur ${total}`;
+      }
+
+      // Menus : etat des options et badge par groupe.
+      for (const option of racine!.querySelectorAll<HTMLElement>('[data-option]')) {
+        const g = option.dataset.groupe as Groupe;
+        const v = option.dataset.valeur!;
+        option.setAttribute(
+          'aria-checked',
+          etat[g].includes(v) ? 'true' : 'false',
+        );
+      }
+
+      for (const menu of racine!.querySelectorAll<HTMLElement>('[data-menu]')) {
+        const g = menu.dataset.menu as Groupe;
+        const badge = menu.querySelector<HTMLElement>('[data-menu-badge]');
+        if (!badge) continue;
+        badge.textContent = String(etat[g].length);
+        badge.hidden = etat[g].length === 0;
+      }
+
+      // Pastilles des cartes et du panneau mobile.
+      for (const pastille of document.querySelectorAll<HTMLElement>(
+        '[data-filtre-groupe]',
+      )) {
+        const g = pastille.dataset.filtreGroupe as Groupe;
+        const v = pastille.dataset.filtreValeur!;
+        const actif = etat[g].includes(v);
+        pastille.classList.toggle('tag--active', actif);
+        if (pastille.tagName === 'BUTTON') {
+          pastille.setAttribute('aria-pressed', actif ? 'true' : 'false');
+        }
+      }
+
+      // Barre « Filtres actifs ».
+      if (zoneActifs && listeActifs) {
+        listeActifs.replaceChildren();
+        for (const groupe of GROUPES) {
+          for (const valeur of etat[groupe]) {
+            const libelle = libelles.get(`${groupe}:${valeur}`) ?? valeur;
+            const li = document.createElement('li');
+            const bouton = document.createElement('button');
+            bouton.type = 'button';
+            bouton.className = `puce-active puce-active--${groupe}`;
+            bouton.dataset.retirer = '';
+            bouton.dataset.groupe = groupe;
+            bouton.dataset.valeur = valeur;
+            bouton.innerHTML =
+              `<span>${titresGroupe[groupe]} : ${libelle}</span>` +
+              '<svg width="10" height="10" viewBox="0 0 10 10" fill="none" aria-hidden="true">' +
+              '<path d="M1.5 1.5L5 5M5 5L8.5 8.5M5 5L8.5 1.5M5 5L1.5 8.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>';
+            bouton.setAttribute(
+              'aria-label',
+              `Retirer le filtre ${titresGroupe[groupe]} : ${libelle}`,
+            );
+            li.append(bouton);
+            listeActifs.append(li);
+          }
+        }
+        zoneActifs.hidden = estVide(etat);
+      }
+
+      // Badge du bouton mobile.
+      const badgeMobile = racine!.querySelector<HTMLElement>('[data-feuille-badge]');
+      if (badgeMobile) {
+        const n = GROUPES.reduce((s, g) => s + etat[g].length, 0);
+        badgeMobile.textContent = String(n);
+        badgeMobile.hidden = n === 0;
+      }
+
+      if (poussserUrl) {
+        // `replaceState` et non `pushState` : l'adresse reflete les filtres,
+        // donc une recherche reste partageable et revenir sur la page depuis
+        // un projet retrouve sa selection. Mais chaque clic n'empile pas une
+        // entree d'historique : le bouton Precedent quitte la page au lieu
+        // de rejouer les filtres un par un.
+        const url = location.pathname + ecrireUrl(etat) + location.hash;
+        history.replaceState(etat, '', url);
+      }
+    }
+
+    function appliquer(etat: EtatFiltres, poussserUrl = true) {
+      etatApplique = etat;
+      etatBrouillon = structuredClone(etat);
+      rendre(etatApplique, poussserUrl);
+    }
+
+    // ---- Menus deroulants ----
+    function fermerMenus(sauf?: Element) {
+      for (const menu of racine!.querySelectorAll<HTMLElement>('[data-menu]')) {
+        if (menu === sauf) continue;
+        menu.querySelector('[data-menu-bouton]')?.setAttribute('aria-expanded', 'false');
+        const p = menu.querySelector<HTMLElement>('[data-menu-panneau]');
+        if (p) p.hidden = true;
+      }
+    }
+
+    racine.addEventListener('click', (event) => {
+      const cible = event.target as HTMLElement;
+
+      const boutonMenu = cible.closest<HTMLElement>('[data-menu-bouton]');
+      if (boutonMenu) {
+        const menu = boutonMenu.closest<HTMLElement>('[data-menu]')!;
+        const panneau = menu.querySelector<HTMLElement>('[data-menu-panneau]')!;
+        const ouvert = !panneau.hidden;
+        fermerMenus(menu);
+        panneau.hidden = ouvert;
+        boutonMenu.setAttribute('aria-expanded', String(!ouvert));
+        return;
+      }
+
+      const option = cible.closest<HTMLElement>('[data-option]');
+      if (option) {
+        const g = option.dataset.groupe as Groupe;
+        appliquer(basculer(etatApplique, g, option.dataset.valeur!));
+        return;
+      }
+
+      const retirer = cible.closest<HTMLElement>('[data-retirer]');
+      if (retirer) {
+        const g = retirer.dataset.groupe as Groupe;
+        appliquer(basculer(etatApplique, g, retirer.dataset.valeur!));
+        return;
+      }
+
+      if (cible.closest('[data-reinitialiser]')) {
+        appliquer(etatVide());
+        fermerFeuille();
+        return;
+      }
+    });
+
+    // Clic hors d'un menu : on ferme.
+    document.addEventListener('click', (event) => {
+      if (!racine.contains(event.target as Node)) fermerMenus();
+    });
+
+    document.addEventListener('keydown', (event) => {
+      if (event.key !== 'Escape') return;
+      if (feuille && !feuille.hidden) {
+        fermerFeuille();
+        return;
+      }
+      fermerMenus();
+    });
+
+    // ---- Pastilles des cartes ----
+    document.addEventListener('click', (event) => {
+      const pastille = (event.target as HTMLElement).closest<HTMLElement>(
+        'button[data-filtre-groupe]',
+      );
+      if (!pastille) return;
+      // Celles du panneau mobile alimentent le brouillon, pas l'etat applique.
+      if (feuille?.contains(pastille)) {
+        etatBrouillon = basculer(
+          etatBrouillon,
+          pastille.dataset.filtreGroupe as Groupe,
+          pastille.dataset.filtreValeur!,
+        );
+        majBrouillon();
+        return;
+      }
+      appliquer(
+        basculer(
+          etatApplique,
+          pastille.dataset.filtreGroupe as Groupe,
+          pastille.dataset.filtreValeur!,
+        ),
+      );
+    });
+
+    // ---- Panneau du bas ----
+    const texteAppliquer = document.querySelector<HTMLElement>(
+      '[data-feuille-appliquer-texte]',
+    );
+
+    function majBrouillon() {
+      if (!feuille) return;
+      for (const pastille of feuille.querySelectorAll<HTMLElement>(
+        '[data-filtre-groupe]',
+      )) {
+        const g = pastille.dataset.filtreGroupe as Groupe;
+        const v = pastille.dataset.filtreValeur!;
+        const actif = etatBrouillon[g].includes(v);
+        pastille.classList.toggle('tag--active', actif);
+        pastille.setAttribute('aria-pressed', actif ? 'true' : 'false');
+      }
+      if (texteAppliquer) {
+        texteAppliquer.textContent = `Voir ${compte(etatBrouillon)} projets`;
+      }
+    }
+
+    function ouvrirFeuille() {
+      if (!feuille || !voile) return;
+      etatBrouillon = structuredClone(etatApplique);
+      majBrouillon();
+      feuille.hidden = false;
+      voile.hidden = false;
+      document.body.style.overflow = 'hidden';
+      feuille.querySelector<HTMLElement>('button')?.focus();
+    }
+
+    function fermerFeuille() {
+      if (!feuille || !voile || feuille.hidden) return;
+      feuille.hidden = true;
+      voile.hidden = true;
+      document.body.style.overflow = '';
+      document
+        .querySelector<HTMLElement>('[data-feuille-ouvrir]')
+        ?.focus();
+    }
+
+    document
+      .querySelector('[data-feuille-ouvrir]')
+      ?.addEventListener('click', ouvrirFeuille);
+    voile?.addEventListener('click', fermerFeuille);
+    document
+      .querySelector('[data-feuille-appliquer]')
+      ?.addEventListener('click', () => {
+        appliquer(etatBrouillon);
+        fermerFeuille();
+      });
+
+    // Focus garde a l'interieur du panneau tant qu'il est ouvert.
+    feuille?.addEventListener('keydown', (event) => {
+      if (event.key !== 'Tab') return;
+      const cibles = Array.from(
+        feuille.querySelectorAll<HTMLElement>('button, [tabindex]:not([tabindex="-1"])'),
+      ).filter((el) => el.offsetParent !== null);
+      if (cibles.length === 0) return;
+      const premier = cibles[0]!;
+      const dernier = cibles[cibles.length - 1]!;
+      if (event.shiftKey && document.activeElement === premier) {
+        event.preventDefault();
+        dernier.focus();
+      } else if (!event.shiftKey && document.activeElement === dernier) {
+        event.preventDefault();
+        premier.focus();
+      }
+    });
+
+    // Revenir sur la page depuis l'historique (ou le cache de navigation) :
+    // on resynchronise l'affichage sur ce que porte l'adresse.
+    addEventListener('popstate', () => {
+      etatApplique = lireUrl(location.search);
+      etatBrouillon = structuredClone(etatApplique);
+      rendre(etatApplique, false);
+    });
+
+    // Premier rendu : on applique ce que porte l'URL sans l'empiler.
+    rendre(etatApplique, false);
+  }
+</script>
+
+<style is:global>
+  /* Puces de la barre « Filtres actifs ». Construites en JavaScript, donc
+     hors de la portee des styles scopes du composant. */
+  .puce-active {
+    display: inline-flex;
+    gap: 8px;
+    align-items: center;
+    padding: 6px 10px 6px 12px;
+    border-radius: 999px;
+    color: #fff;
+    font-weight: var(--fw-medium);
+    font-size: 14px;
+  }
+
+  .puce-active--domaine {
+    background-color: var(--tag-domaine);
+  }
+
+  .puce-active--moteur {
+    background-color: var(--tag-moteur);
+  }
+
+  .puce-active--langage {
+    background-color: var(--tag-langage);
+  }
+
+  .puce-active:hover {
+    filter: brightness(1.1);
+  }
+</style>

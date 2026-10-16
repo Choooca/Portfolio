@@ -55,7 +55,7 @@ Un projet = un fichier `src/content/projets/<slug>.md`. L'en-tête (frontmatter)
 | `featured` | booléen | non | Apparaît dans le carrousel de l'accueil |
 | `ordre` | nombre | non | Ordre dans sa section (sinon alphabétique) |
 
-- **Cartes** : 3 pastilles maximum (une par dimension). Le détail des technologies va dans la fiche projet, pas sur la carte.
+- **Cartes** : toutes les valeurs de `domaine`, `moteur` et `langage` s'affichent en pastilles, dans cet ordre ; elles passent à la ligne et la carte s'allonge si besoin. Le détail des `technos` reste réservé à la fiche projet. *(Décidé au dev le 16/10/2026 : la maquette n'en prévoyait qu'une par dimension, mais une carte pouvait alors ressortir d'un filtre sans montrer la pastille correspondante.)*
 - **Précédent / suivant** : projets voisins dans la même section, en boucle.
 - **Traduction** : les champs texte (`genre`, `pitch`, `role`, `contribution`) et le corps existent en FR et EN ; si l'EN manque, on affiche le FR.
 
@@ -64,14 +64,14 @@ Un projet = un fichier `src/content/projets/<slug>.md`. L'en-tête (frontmatter)
 Règle : **OU à l'intérieur d'un groupe, ET entre les groupes**. Exemple : Unity + Godot + C# = les projets (Unity ou Godot) et en C#.
 
 - **Sections fixes** : Professionnel, Scolaire, Personnel, toujours dans cet ordre et toujours visibles. Chaque section affiche son compteur de projets correspondants.
-- **Section sans résultat** : elle reste, repliée en un message « Aucun projet ne correspond aux filtres actifs dans cette section ».
+- **Section sans résultat** : elle reste affichée, réduite à son en-tête avec son compteur à zéro. *(Décidé au dev le 16/10/2026 : le message « Aucun projet ne correspond aux filtres actifs dans cette section » prenait trop de place pour ce qu'il apportait, le compteur à zéro suffit.)*
 - **Aucun résultat du tout** : les sections sont remplacées par l'état vide global, avec un bouton « Réinitialiser les filtres ».
 - **Deux façons de filtrer** :
   - les menus Domaine / Moteur / Langage (desktop) ou le bouton « Filtres » qui ouvre le panneau du bas (mobile) ;
   - un clic sur une pastille d'une carte, qui ajoute ce filtre ou le retire s'il est déjà actif.
 - **Retour visuel** : la barre « Filtres actifs » liste chaque filtre avec une croix pour le retirer. Un badge sur le menu donne le nombre de filtres de ce groupe, et les pastilles des cartes qui correspondent passent en état actif. Le total « X projets sur 24 » se met à jour.
 - **Menus** : chaque option affiche le nombre total de projets qui la portent. Les options sans aucun projet n'apparaissent pas.
-- **URL** : les filtres sont écrits dans l'adresse (`/bibliotheque?moteur=unity,godot&langage=csharp`), pour pouvoir partager une recherche et garder les filtres au retour arrière.
+- **URL** : les filtres sont écrits dans l'adresse (`/bibliotheque?moteur=unity,godot&langage=csharp`), pour pouvoir partager une recherche et retrouver sa sélection en revenant depuis une page projet. En revanche l'adresse est **remplacée** et non empilée : le bouton Précédent quitte la Bibliothèque au lieu de rejouer les filtres un par un. *(Décidé au dev le 16/10/2026.)*
 - **Mobile** : dans le panneau, les choix ne s'appliquent qu'au bouton « Voir N projets », dont le nombre se met à jour en direct.
 - **Sans JavaScript** : toutes les cartes s'affichent, les filtres sont simplement inactifs.
 

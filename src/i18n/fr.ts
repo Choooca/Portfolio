@@ -29,7 +29,6 @@ export default {
   'bib.filtres.retirer': 'Retirer ce filtre',
   'bib.compteur': '{n} projets sur {total}',
   'bib.voirN': 'Voir {n} projets',
-  'bib.section.vide': 'Aucun projet ne correspond aux filtres actifs dans cette section.',
   'bib.vide.titre': 'Aucun résultat',
   'bib.vide.texte': 'Aucun projet ne correspond aux filtres actifs.',
 

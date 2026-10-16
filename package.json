@@ -11,7 +11,8 @@
     "build": "astro check && astro build",
     "preview": "astro preview",
     "astro": "astro",
-    "captures": "node scripts/captures.mjs"
+    "captures": "node scripts/captures.mjs",
+    "test:filtres": "node scripts/test-filtres.mjs"
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.10",

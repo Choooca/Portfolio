@@ -58,6 +58,8 @@ function servir() {
 const PAGES = [
   { nom: 'accueil', chemin: '/' },
   { nom: 'bibliotheque', chemin: '/bibliotheque' },
+  { nom: 'bib-filtre', chemin: '/bibliotheque?domaine=graphique' },
+  { nom: 'bib-vide', chemin: '/bibliotheque?domaine=graphique&langage=csharp' },
 ];
 
 const FORMATS = [
@@ -99,6 +101,15 @@ for (const page of PAGES) {
       const nom = `${page.nom}-${format.nom}-${theme}.png`;
       await onglet.screenshot({ path: join(SORTIE, nom), fullPage: true });
       faites.push(nom);
+
+      // En mobile, on capture aussi le panneau de filtres ouvert.
+      if (format.nom === 'mobile' && page.nom === 'bibliotheque') {
+        await onglet.click('[data-feuille-ouvrir]');
+        await onglet.waitForTimeout(250);
+        const nomFiltres = `${page.nom}-filtres-ouverts-${theme}.png`;
+        await onglet.screenshot({ path: join(SORTIE, nomFiltres) });
+        faites.push(nomFiltres);
+      }
 
       // En mobile, on capture aussi le menu burger ouvert.
       if (format.nom === 'mobile' && page.nom === 'accueil') {

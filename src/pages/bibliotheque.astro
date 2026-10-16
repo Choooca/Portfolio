@@ -1,14 +1,15 @@
 ---
-// Bibliotheque — Figma « Screen / Bibliothèque » (58:5) et
+// Bibliotheque — Figma « Screen / Bibliothèque » (58:5),
+// « Filtre actif » (59:353), « Aucun résultat » (2014:3398) et
 // « Mobile / Bibliothèque » (2010:1589).
-//
-// Cette version pose les sections et les cartes. La barre de filtres
-// (menus Domaine / Moteur / Langage, filtres actifs, compteur « X sur Y »)
-// et les etats vides viendront ensuite.
 import { getCollection } from 'astro:content';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import ProjectCard from '../components/ProjectCard.astro';
+import Filtres, { type Option } from '../components/Filtres.astro';
+import Icone from '../components/Icone.astro';
 import { SECTIONS, type Section } from '../content.config';
+import { GROUPES, type Groupe } from '../lib/filtres';
+import { slugifyFiltre } from '../lib/slug';
 import { useTranslations, DEFAULT_LOCALE, type TranslationKey } from '../i18n';
 
 const locale = DEFAULT_LOCALE;
@@ -16,10 +17,6 @@ const t = useTranslations(locale);
 
 const projets = await getCollection('projets');
 
-/**
- * Tri d'une section : `ordre` d'abord quand il est renseigne, puis ordre
- * alphabetique sur le titre.
- */
 function trier(a: (typeof projets)[number], b: (typeof projets)[number]) {
   const oa = a.data.ordre;
   const ob = b.data.ordre;
@@ -29,14 +26,47 @@ function trier(a: (typeof projets)[number], b: (typeof projets)[number]) {
   return a.data.titre.localeCompare(b.data.titre, 'fr');
 }
 
-// Les trois sections sont fixes et toujours affichees, dans cet ordre,
-// meme vides.
 const sections = SECTIONS.map((cle: Section) => ({
   cle,
   titre: t(`bib.section.${cle}` as TranslationKey),
   description: t(`bib.section.${cle}.desc` as TranslationKey),
   projets: projets.filter((p) => p.data.section === cle).sort(trier),
 }));
+
+/**
+ * Options des menus : chaque valeur porte le nombre total de projets qui
+ * l'utilisent. Les valeurs sans aucun projet n'apparaissent pas, comme le
+ * demande le document.
+ */
+function construireOptions(groupe: Groupe): Option[] {
+  const compte = new Map<string, { libelle: string; nombre: number }>();
+
+  for (const projet of projets) {
+    const valeurs: string[] =
+      groupe === 'moteur'
+        ? projet.data.moteur
+          ? [projet.data.moteur]
+          : []
+        : groupe === 'domaine'
+          ? [...projet.data.domaine]
+          : [...projet.data.langage];
+
+    for (const libelle of valeurs) {
+      const valeur = slugifyFiltre(libelle);
+      const existant = compte.get(valeur);
+      if (existant) existant.nombre += 1;
+      else compte.set(valeur, { libelle, nombre: 1 });
+    }
+  }
+
+  return [...compte.entries()]
+    .map(([valeur, { libelle, nombre }]) => ({ valeur, libelle, nombre }))
+    .sort((a, b) => a.libelle.localeCompare(b.libelle, 'fr'));
+}
+
+const options = Object.fromEntries(
+  GROUPES.map((g) => [g, construireOptions(g)]),
+) as Record<Groupe, Option[]>;
 ---
 
 <BaseLayout titre={t('bib.titre')} description={t('bib.sousTitre')} locale={locale}>
@@ -45,27 +75,50 @@ const sections = SECTIONS.map((cle: Section) => ({
     <p class="sous-titre">{t('bib.sousTitre')}</p>
   </header>
 
+  <Filtres options={options} total={projets.length} locale={locale} />
+
   <div class="contenu wrapper">
     {
       sections.map((section) => (
-        <section class="section" aria-labelledby={`section-${section.cle}`}>
+        <section
+          class="section"
+          aria-labelledby={`section-${section.cle}`}
+          data-section
+        >
           <div class="section__entete">
             <h2 id={`section-${section.cle}`}>{section.titre}</h2>
-            <span class="compteur">{section.projets.length}</span>
+            <span class="compteur" data-section-compteur>
+              {section.projets.length}
+            </span>
             <hr class="filet" />
             <p class="description">{section.description}</p>
           </div>
 
-          <ul class="grille" role="list">
+          <ul class="grille" role="list" data-grille>
             {section.projets.map((projet) => (
               <li>
                 <ProjectCard projet={projet} locale={locale} />
               </li>
             ))}
           </ul>
+
         </section>
       ))
     }
+
+    {/* Aucun résultat du tout : remplace les sections. */}
+    <div class="vide" hidden data-vide-global>
+      <span class="vide__icone">
+        <Icone nom="loupe-vide" />
+      </span>
+      <p class="vide__titre">Aucun projet ne correspond à ces filtres.</p>
+      <p class="vide__texte">Essaie de retirer un filtre ou de tout réinitialiser.</p>
+      <div class="vide__actions">
+        <button type="button" class="vide__bouton" data-reinitialiser>
+          {t('bib.filtres.reinitialiser')}
+        </button>
+      </div>
+    </div>
   </div>
 </BaseLayout>
 
@@ -130,7 +183,6 @@ const sections = SECTIONS.map((cle: Section) => ({
     color: var(--text-muted);
   }
 
-  /* Le filet ne separe les deux textes qu'a partir du desktop. */
   .filet {
     display: none;
     flex: 1;
@@ -156,8 +208,6 @@ const sections = SECTIONS.map((cle: Section) => ({
     margin: 0;
   }
 
-  /* Les cartes d'une meme ligne gardent la meme hauteur, quel que soit le
-     nombre de lignes de leur titre ou de leurs pastilles. */
   .grille > li {
     display: flex;
   }
@@ -166,11 +216,60 @@ const sections = SECTIONS.map((cle: Section) => ({
     width: 100%;
   }
 
-  /* Section sans projet : on ne laisse pas l'espace de la grille vide.
-     TODO(filtres) : afficher ici le message « Aucun projet ne correspond
-     aux filtres actifs dans cette section ». */
+  /* Section sans aucun projet (hors filtrage) : pas d'espace vide. */
   .grille:empty {
     display: none;
+  }
+
+
+  /* ---- Aucun résultat ---- */
+  .vide {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    align-items: center;
+    padding-block: 48px;
+    text-align: center;
+  }
+
+  .vide__icone {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 72px;
+    height: 72px;
+    border: 1px solid var(--border-default);
+    border-radius: 36px;
+    background-color: var(--surface-default);
+    color: var(--text-muted);
+  }
+
+  .vide__titre {
+    font-weight: var(--fw-semibold);
+    font-size: 22px;
+    letter-spacing: -0.28px;
+    text-wrap: balance;
+    color: var(--text-primary);
+  }
+
+  .vide__texte {
+    font-weight: var(--fw-light);
+    font-size: 15px;
+    text-wrap: balance;
+    color: var(--text-muted);
+  }
+
+  .vide__actions {
+    padding-block-start: 12px;
+  }
+
+  .vide__bouton {
+    padding: 14px 22px;
+    border-radius: 12px;
+    background-color: var(--accent-fill);
+    color: var(--accent-on);
+    font-weight: var(--fw-semibold);
+    font-size: 16px;
   }
 
   /* ====================================================================
@@ -184,7 +283,7 @@ const sections = SECTIONS.map((cle: Section) => ({
   }
 
   /* ====================================================================
-     Desktop : 4 cartes par ligne, en-tetes de la maquette 1920.
+     Desktop : 4 cartes par ligne, tailles de la maquette 1920.
      ==================================================================== */
   @media (min-width: 1024px) {
     .entete {
@@ -237,6 +336,19 @@ const sections = SECTIONS.map((cle: Section) => ({
 
     .grille {
       grid-template-columns: repeat(4, 1fr);
+    }
+
+
+    .vide {
+      padding-block: 96px;
+    }
+
+    .vide__titre {
+      font-size: 28px;
+    }
+
+    .vide__texte {
+      font-size: 18px;
     }
   }
 </style>

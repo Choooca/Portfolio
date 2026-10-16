@@ -35,7 +35,6 @@ const en: Partial<Record<keyof typeof fr, string>> = {
   'bib.filtres.retirer': 'Remove this filter',
   'bib.compteur': '{n} of {total} projects',
   'bib.voirN': 'Show {n} projects',
-  'bib.section.vide': 'No project in this section matches the active filters.',
   'bib.vide.titre': 'No results',
   'bib.vide.texte': 'No project matches the active filters.',
 

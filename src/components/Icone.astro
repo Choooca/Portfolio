@@ -21,7 +21,13 @@ interface Props {
     | 'telechargement'
     | 'fleche-haut'
     | 'media-placeholder'
-    | 'lecture';
+    | 'lecture'
+    | 'chevron-bas'
+    | 'chevron-haut'
+    | 'croix'
+    | 'coche'
+    | 'loupe-vide'
+    | 'filtres';
   class?: string;
 }
 
@@ -93,6 +99,50 @@ const { nom, class: className } = Astro.props;
   nom === 'lecture' && (
     <svg class={className} width="9" height="10" viewBox="0 0 9 10" fill="none" aria-hidden="true" focusable="false">
       <path d="M1 1.2V8.8C1.00336 8.90365 1.03353 9.00466 1.08756 9.09318C1.14159 9.1817 1.21764 9.2547 1.3083 9.30506C1.39895 9.35542 1.50112 9.38143 1.60482 9.38054C1.70852 9.37966 1.81022 9.35191 1.9 9.3L8.3 5.5C8.38251 5.44527 8.45019 5.37097 8.49701 5.28373C8.54383 5.19649 8.56834 5.09901 8.56834 5C8.56834 4.90099 8.54383 4.80351 8.49701 4.71627C8.45019 4.62903 8.38251 4.55473 8.3 4.5L1.9 0.7C1.81022 0.648093 1.70852 0.620342 1.60482 0.619455C1.50112 0.618568 1.39895 0.644575 1.3083 0.694939C1.21764 0.745303 1.14159 0.818304 1.08756 0.906821C1.03353 0.995338 1.00336 1.09635 1 1.2Z" fill="currentColor" />
+    </svg>
+  )
+}
+
+{
+  nom === 'chevron-bas' && (
+    <svg class={className} width="12" height="8" viewBox="0 0 12 8" fill="none" aria-hidden="true" focusable="false">
+      <path d="M1 1.5L6 6.5L11 1.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+    </svg>
+  )
+}
+{
+  nom === 'chevron-haut' && (
+    <svg class={className} width="12" height="8" viewBox="0 0 12 8" fill="none" aria-hidden="true" focusable="false">
+      <path d="M1 6.5L6 1.5L11 6.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+    </svg>
+  )
+}
+{
+  nom === 'croix' && (
+    <svg class={className} width="10" height="10" viewBox="0 0 10 10" fill="none" aria-hidden="true" focusable="false">
+      <path d="M1.5 1.5L5 5M5 5L8.5 8.5M5 5L8.5 1.5M5 5L1.5 8.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
+    </svg>
+  )
+}
+{
+  nom === 'coche' && (
+    <svg class={className} width="12" height="10" viewBox="0 0 12 10" fill="none" aria-hidden="true" focusable="false">
+      <path d="M1.5 5L4.5 8L10.5 1.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+    </svg>
+  )
+}
+{
+  nom === 'loupe-vide' && (
+    <svg class={className} width="28" height="28" viewBox="0 0 28 28" fill="none" aria-hidden="true" focusable="false">
+      <path d="M20.4167 12.8333C20.4167 17.0215 17.0215 20.4167 12.8333 20.4167C8.64517 20.4167 5.25 17.0215 5.25 12.8333C5.25 8.64517 8.64517 5.25 12.8333 5.25C17.0215 5.25 20.4167 8.64517 20.4167 12.8333Z" stroke="currentColor" stroke-width="2.1" />
+      <path d="M18.6667 18.6667L23.9167 23.9167M9.91667 12.8333H15.75" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" />
+    </svg>
+  )
+}
+{
+  nom === 'filtres' && (
+    <svg class={className} width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true" focusable="false">
+      <path d="M2 4H14M4.5 8H11.5M7 12H9" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" />
     </svg>
   )
 }

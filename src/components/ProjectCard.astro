@@ -10,6 +10,7 @@ import type { CollectionEntry } from 'astro:content';
 import Tag from './Tag.astro';
 import Icone from './Icone.astro';
 import { href } from '../lib/url';
+import { slugifyFiltre } from '../lib/slug';
 import { pick, useTranslations, type Locale } from '../i18n';
 
 interface Props {
@@ -28,16 +29,36 @@ const premier = d.medias[0]!;
 const vignette = premier.type === 'image' ? premier.src : premier.poster;
 const legende = pick(premier.legende, premier.legende_en, locale);
 
-// 3 pastilles au maximum : une par dimension (le detail va sur la fiche).
+// Toutes les valeurs de filtre, dans l'ordre des dimensions. La maquette
+// n'en montrait qu'une par dimension, mais une carte pouvait alors ressortir
+// d'un filtre sans afficher la pastille correspondante. Elles passent a la
+// ligne et la carte s'allonge ; la grille egalise les hauteurs par rangee.
 type Pastille = { kind: 'domaine' | 'moteur' | 'langage'; label: string };
 
-const pastilles: Pastille[] = [];
-if (d.domaine[0]) pastilles.push({ kind: 'domaine', label: d.domaine[0] });
-if (d.moteur) pastilles.push({ kind: 'moteur', label: d.moteur });
-if (d.langage[0]) pastilles.push({ kind: 'langage', label: d.langage[0] });
+const pastilles: Pastille[] = [
+  ...d.domaine.map((label) => ({ kind: 'domaine' as const, label })),
+  ...(d.moteur ? [{ kind: 'moteur' as const, label: d.moteur }] : []),
+  ...d.langage.map((label) => ({ kind: 'langage' as const, label })),
+];
+
+// Valeurs de filtre portees par la carte : TOUTES les valeurs du projet, pas
+// seulement les trois pastilles affichees. Un projet « Gameplay + Graphique »
+// doit sortir sur l'un comme sur l'autre.
+const filtres = {
+  domaine: d.domaine.map(slugifyFiltre).join(','),
+  moteur: d.moteur ? slugifyFiltre(d.moteur) : '',
+  langage: d.langage.map(slugifyFiltre).join(','),
+};
 ---
 
-<article class="carte" data-apercu={d.apercu}>
+<article
+  class="carte"
+  data-carte
+  data-apercu={d.apercu}
+  data-domaine={filtres.domaine}
+  data-moteur={filtres.moteur}
+  data-langage={filtres.langage}
+>
   <div class="media">
     {
       vignette ? (
@@ -49,7 +70,9 @@ if (d.langage[0]) pastilles.push({ kind: 'langage', label: d.langage[0] });
           sizes="(max-width: 639px) 88px, 402px"
         />
       ) : (
-        <Icone nom="media-placeholder" class="media__vide" />
+        <span class="media__vide">
+          <Icone nom="media-placeholder" />
+        </span>
       )
     }
 
@@ -89,8 +112,8 @@ if (d.langage[0]) pastilles.push({ kind: 'langage', label: d.langage[0] });
       {
         pastilles.map((p) => (
           <li>
-            {/* TODO(filtres) : passer `interactif` a true pour filtrer au clic. */}
-            <Tag kind={p.kind} label={p.label} interactif={false} />
+            {/* Cliquable : ajoute le filtre, ou le retire s'il est deja actif. */}
+            <Tag kind={p.kind} label={p.label} />
           </li>
         ))
       }
@@ -134,7 +157,10 @@ if (d.langage[0]) pastilles.push({ kind: 'langage', label: d.langage[0] });
     object-fit: cover;
   }
 
+  /* Enveloppe : voir la note dans Filtres.astro sur la portee des classes
+     passees en prop a <Icone>. */
   .media__vide {
+    display: inline-flex;
     width: 24px;
     height: 24px;
   }
