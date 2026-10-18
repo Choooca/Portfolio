@@ -1,0 +1,256 @@
+---
+// Page projet — Figma « Screen / Projet — Diamond Seams (équipe) » (2006:667),
+// « Screen / Projet — Deferred & Forward Rendering » (63:467, solo) et
+// « Mobile / Projet — Diamond Seams » (2011:2358).
+import type { GetStaticPaths } from 'astro';
+import { getCollection, render } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Carrousel from '../../components/Carrousel.astro';
+import FicheProjet from '../../components/FicheProjet.astro';
+import RoleCallout from '../../components/RoleCallout.astro';
+import NavigationProjet from '../../components/NavigationProjet.astro';
+import Tag from '../../components/Tag.astro';
+import { href } from '../../lib/url';
+import { pick, useTranslations, DEFAULT_LOCALE } from '../../i18n';
+import '../../styles/prose.css';
+
+export const getStaticPaths = (async () => {
+  const projets = await getCollection('projets');
+
+  const trier = (a: (typeof projets)[number], b: (typeof projets)[number]) => {
+    const oa = a.data.ordre;
+    const ob = b.data.ordre;
+    if (oa !== undefined && ob !== undefined) return oa - ob;
+    if (oa !== undefined) return -1;
+    if (ob !== undefined) return 1;
+    return a.data.titre.localeCompare(b.data.titre, 'fr');
+  };
+
+  return projets.map((projet) => {
+    // Précédent / suivant : voisins dans la MÊME section, en boucle.
+    const voisins = projets
+      .filter((p) => p.data.section === projet.data.section)
+      .sort(trier);
+    const i = voisins.findIndex((p) => p.id === projet.id);
+    const n = voisins.length;
+
+    return {
+      params: { slug: projet.id },
+      props: {
+        projet,
+        precedent: voisins[(i - 1 + n) % n]!,
+        suivant: voisins[(i + 1) % n]!,
+      },
+    };
+  });
+}) satisfies GetStaticPaths;
+
+const { projet, precedent, suivant } = Astro.props;
+const locale = DEFAULT_LOCALE;
+const t = useTranslations(locale);
+const d = projet.data;
+
+const { Content } = await render(projet);
+
+const pitch = pick(d.pitch, d.pitch_en, locale);
+const role = pick(d.role, d.role_en, locale);
+const contribution = pick(d.contribution, d.contribution_en, locale);
+
+const sections = {
+  pro: t('bib.section.pro'),
+  scolaire: t('bib.section.scolaire'),
+  perso: t('bib.section.perso'),
+} as const;
+
+// « Mon rôle » et la ligne « Rôle » n'existent qu'en équipe.
+const enEquipe = d.equipe > 1 && Boolean(role) && Boolean(contribution);
+
+const pastilles = [
+  ...d.domaine.map((label) => ({ kind: 'domaine' as const, label })),
+  ...(d.moteur ? [{ kind: 'moteur' as const, label: d.moteur }] : []),
+  ...d.langage.map((label) => ({ kind: 'langage' as const, label })),
+];
+
+// Un seul projet dans la section : la navigation boucle sur lui-même.
+const afficherNavigation = precedent.id !== projet.id || suivant.id !== projet.id;
+---
+
+<BaseLayout titre={d.titre} description={pitch} locale={locale}>
+  <header class="entete wrapper">
+    <p class="fil">
+      <a href={href('/bibliotheque')}>← {t('projet.retourBibliotheque')}</a>
+      <span aria-hidden="true">/</span>
+      <span>{sections[d.section]}</span>
+    </p>
+
+    <h1>{d.titre}</h1>
+    <p class="pitch">{pitch}</p>
+
+    <ul class="pastilles" role="list">
+      {
+        pastilles.map((p) => (
+          <li>
+            <Tag kind={p.kind} label={p.label} interactif={false} />
+          </li>
+        ))
+      }
+    </ul>
+  </header>
+
+  <Carrousel medias={d.medias} titre={d.titre} locale={locale} />
+
+  <div class="corps wrapper">
+    <article class="article">
+      {enEquipe && <RoleCallout role={role!} contribution={contribution!} locale={locale} />}
+      <div class="prose">
+        <Content />
+      </div>
+    </article>
+
+    <div class="colonne">
+      <FicheProjet projet={projet} locale={locale} />
+    </div>
+  </div>
+
+  <div class="wrapper">
+    {afficherNavigation && <NavigationProjet precedent={precedent} suivant={suivant} locale={locale} />}
+  </div>
+</BaseLayout>
+
+<style>
+  /* ---- En-tête ---- */
+  .entete {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding-block: 28px 24px;
+  }
+
+  .fil {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    font-size: 14px;
+    color: var(--text-subtle);
+  }
+
+  .fil a {
+    color: var(--text-muted);
+    text-decoration: none;
+  }
+
+  .fil a:hover {
+    color: var(--text-primary);
+  }
+
+  h1 {
+    font-weight: var(--fw-semibold);
+    font-size: 32px;
+    letter-spacing: -0.64px;
+    text-wrap: balance;
+    color: var(--text-primary);
+  }
+
+  .pitch {
+    max-width: 1100px;
+    font-weight: var(--fw-light);
+    font-size: 16px;
+    line-height: 1.5;
+    text-wrap: pretty;
+    color: var(--text-muted);
+  }
+
+  .pastilles {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 0;
+  }
+
+  /* ---- Corps ----
+     Mobile : la fiche passe AVANT l'article, juste sous le carrousel. */
+  .corps {
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+    padding-block: 32px;
+  }
+
+  .colonne {
+    order: -1;
+  }
+
+  .article {
+    display: flex;
+    flex-direction: column;
+    gap: 28px;
+    min-width: 0;
+  }
+
+  /* ====================================================================
+     Desktop : deux colonnes, fiche collée à droite.
+     ==================================================================== */
+  @media (min-width: 1024px) {
+    .entete {
+      gap: 24px;
+      padding-block: 56px 48px;
+    }
+
+    h1 {
+      font-size: 64px;
+      letter-spacing: -1.28px;
+    }
+
+    .pitch {
+      font-size: 22px;
+    }
+
+    .fil {
+      font-size: 16px;
+    }
+
+    .corps {
+      display: grid;
+      grid-template-columns: minmax(0, 1080px) 520px;
+      gap: 80px;
+      align-items: start;
+      padding-block: 96px;
+    }
+
+    .colonne {
+      order: 0;
+      /* Collée sous la navigation, en desktop seulement. */
+      position: sticky;
+      top: calc(var(--nav-height) + 24px);
+    }
+
+    .article {
+      gap: 40px;
+    }
+  }
+</style>
+
+<script>
+  // Bouton « copier » des blocs de code.
+  document.addEventListener('click', async (event) => {
+    const bouton = (event.target as HTMLElement).closest<HTMLElement>(
+      '[data-copier-code]',
+    );
+    if (!bouton) return;
+
+    const code = bouton.closest('.bloc-code')?.querySelector('code')?.textContent;
+    if (!code) return;
+
+    try {
+      await navigator.clipboard.writeText(code);
+      bouton.dataset.copie = '';
+      bouton.setAttribute('aria-label', 'Code copié');
+      setTimeout(() => {
+        delete bouton.dataset.copie;
+        bouton.setAttribute('aria-label', 'Copier le code');
+      }, 1600);
+    } catch {
+      // Presse-papiers refusé (contexte non sécurisé) : on ne fait rien.
+    }
+  });
+</script>

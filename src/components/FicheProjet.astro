@@ -1,0 +1,204 @@
+---
+// Fiche projet — Figma « Fiche projet » (2006:759).
+// Collée dans la colonne de droite en desktop ; sous le carrousel et non
+// collée en tablette et mobile, où elle prendrait trop de place.
+import { useTranslations, type Locale } from '../i18n';
+import type { CollectionEntry } from 'astro:content';
+
+interface Props {
+  projet: CollectionEntry<'projets'>;
+  locale?: Locale;
+}
+
+const { projet, locale = 'fr' } = Astro.props;
+const t = useTranslations(locale);
+const d = projet.data;
+
+const contextes: Record<typeof d.section, string> = {
+  pro: t('bib.section.pro'),
+  scolaire: t('bib.section.scolaire'),
+  perso: t('bib.section.perso'),
+};
+
+// La ligne « Rôle » n'apparait qu'en equipe, comme l'encadré « Mon rôle ».
+// Une ligne sans valeur n'est pas affichée du tout.
+const lignes = [
+  { libelle: t('projet.contexte'), valeur: contextes[d.section] },
+  d.equipe > 1 && d.role ? { libelle: t('projet.role'), valeur: d.role } : null,
+  d.duree ? { libelle: t('projet.duree'), valeur: d.duree } : null,
+  {
+    libelle: t('projet.equipe'),
+    valeur: d.equipe === 1 ? t('projet.solo') : t('projet.personnes', { n: d.equipe }),
+  },
+  d.plateforme ? { libelle: t('projet.plateforme'), valeur: d.plateforme } : null,
+].filter((l): l is { libelle: string; valeur: string } => l !== null);
+---
+
+<aside class="fiche">
+  <p class="fiche__titre">{t('projet.fiche').toUpperCase()}</p>
+
+  <dl class="lignes">
+    {
+      lignes.map((ligne) => (
+        <div class="ligne">
+          <dt>{ligne.libelle}</dt>
+          <dd>{ligne.valeur}</dd>
+        </div>
+      ))
+    }
+  </dl>
+
+  <div class="technos">
+    <p class="technos__titre">{t('projet.technos')}</p>
+    <ul class="technos__liste" role="list">
+      {d.technos.map((techno) => <li class="puce">{techno}</li>)}
+    </ul>
+  </div>
+
+  {
+    (d.liens.jouer || d.liens.github || d.liens.video) && (
+      <div class="actions">
+        {d.liens.jouer && (
+          <a class="bouton bouton--principal" href={d.liens.jouer} rel="noopener noreferrer">
+            {t('projet.lien.jouer')} →
+          </a>
+        )}
+        {d.liens.github && (
+          <a class="bouton" href={d.liens.github} rel="noopener noreferrer">
+            {t('projet.lien.github')} →
+          </a>
+        )}
+        {d.liens.video && (
+          <a class="bouton" href={d.liens.video} rel="noopener noreferrer">
+            {t('projet.lien.video')} →
+          </a>
+        )}
+      </div>
+    )
+  }
+</aside>
+
+<style>
+  .fiche {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    padding: 28px;
+    border: 1px solid var(--border-default);
+    border-radius: 24px;
+    background-color: var(--surface-default);
+  }
+
+  .fiche__titre {
+    font-weight: var(--fw-medium);
+    font-size: 13px;
+    letter-spacing: 1.95px;
+    color: var(--text-subtle);
+  }
+
+  /* ---- Lignes ---- */
+  .lignes {
+    margin: 0;
+  }
+
+  .ligne {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding-block: 14px;
+    border-block-end: 1px solid var(--separator);
+  }
+
+  .ligne:last-child {
+    border-block-end: none;
+    padding-block-end: 0;
+  }
+
+  dt {
+    font-size: 15px;
+    color: var(--text-muted);
+  }
+
+  dd {
+    margin: 0;
+    font-weight: var(--fw-medium);
+    font-size: 16px;
+    color: var(--text-primary);
+    text-align: end;
+  }
+
+  /* ---- Technologies ---- */
+  .technos {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .technos__titre {
+    font-size: 15px;
+    color: var(--text-muted);
+  }
+
+  .technos__liste {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 0;
+  }
+
+  .puce {
+    padding: 6px 12px;
+    border: 1px solid var(--border-default);
+    border-radius: 8px;
+    background-color: var(--surface-raised);
+    font-size: 14px;
+    color: var(--text-secondary);
+  }
+
+  /* ---- Boutons ---- */
+  .actions {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .bouton {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding-block: 16px;
+    border: 1px solid var(--border-default);
+    border-radius: 14px;
+    color: var(--text-primary);
+    font-weight: var(--fw-semibold);
+    font-size: 16px;
+    text-decoration: none;
+  }
+
+  .bouton:hover {
+    background-color: var(--surface-raised);
+  }
+
+  .bouton--principal {
+    border-color: var(--accent-fill);
+    background-color: var(--accent-fill);
+    color: var(--accent-on);
+  }
+
+  .bouton--principal:hover {
+    background-color: color-mix(in srgb, var(--accent-fill) 85%, white);
+  }
+
+  @media (max-width: 639px) {
+    .fiche {
+      gap: 20px;
+      padding: 20px;
+      border-radius: 20px;
+    }
+
+    dd {
+      font-size: 15px;
+    }
+  }
+</style>

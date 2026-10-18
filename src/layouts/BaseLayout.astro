@@ -94,5 +94,38 @@ const canonical = canonicalUrl(Astro.url.pathname, Astro.site);
       <slot />
     </main>
     <Footer locale={locale} />
+
+    <script>
+      /*
+        Liens d'ancre internes (« Contact » vers le pied de page, « Retour en
+        haut »). Par défaut le navigateur empile une entrée d'historique à
+        chaque clic : le bouton Précédent se mettait à rejouer les
+        défilements au lieu de revenir à la page précédente. On défile
+        nous-mêmes, sans toucher à l'historique ni à l'adresse.
+      */
+      document.addEventListener('click', (event) => {
+        const lien = (event.target as HTMLElement).closest<HTMLAnchorElement>(
+          'a[href^="#"]',
+        );
+        if (!lien || lien.hasAttribute('download')) return;
+
+        const id = lien.getAttribute('href')?.slice(1);
+        const cible = id ? document.getElementById(id) : null;
+        if (!cible) return;
+
+        event.preventDefault();
+
+        const animations = !window.matchMedia('(prefers-reduced-motion: reduce)')
+          .matches;
+        cible.scrollIntoView({
+          behavior: animations ? 'smooth' : 'auto',
+          block: 'start',
+        });
+
+        // Le focus doit suivre, sinon la navigation au clavier reste en haut.
+        cible.setAttribute('tabindex', '-1');
+        cible.focus({ preventScroll: true });
+      });
+    </script>
   </body>
 </html>

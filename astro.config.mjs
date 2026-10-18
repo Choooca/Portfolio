@@ -1,5 +1,10 @@
 // @ts-check
 import { defineConfig } from 'astro/config';
+import {
+  themeCodeClair,
+  themeCodeSombre,
+  transformerBlocCode,
+} from './src/lib/code-block.mjs';
 
 // Site de projet GitHub Pages : https://choooca.github.io/Portfolio
 // `base` doit prefixer tous les liens internes -> utiliser le helper
@@ -13,8 +18,13 @@ export default defineConfig({
   },
   markdown: {
     shikiConfig: {
-      // Les blocs de code restent sombres dans les deux themes.
-      theme: 'github-dark',
+      // Deux themes sur mesure, aux couleurs de tokens.css.
+      // `defaultColor: false` fait emettre a Shiki les deux couleurs en
+      // variables CSS (--shiki-light / --shiki-dark) sur chaque jeton : le
+      // bloc suit alors le theme du site sans rien recalculer au clic.
+      themes: { light: themeCodeClair, dark: themeCodeSombre },
+      defaultColor: false,
+      transformers: [transformerBlocCode],
       wrap: false,
     },
   },

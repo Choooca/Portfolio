@@ -1,0 +1,172 @@
+---
+// Navigation entre projets — Figma « Project navigation » (2006:802).
+// Projets voisins dans la MÊME section, en boucle.
+import Media from './Media.astro';
+import { href } from '../lib/url';
+import { useTranslations, type Locale } from '../i18n';
+import type { CollectionEntry } from 'astro:content';
+
+interface Props {
+  precedent: CollectionEntry<'projets'>;
+  suivant: CollectionEntry<'projets'>;
+  locale?: Locale;
+}
+
+const { precedent, suivant, locale = 'fr' } = Astro.props;
+const t = useTranslations(locale);
+
+const vignette = (projet: CollectionEntry<'projets'>) => {
+  const premier = projet.data.medias[0]!;
+  return premier.type === 'image' ? premier.src : premier.poster;
+};
+---
+
+<nav class="navigation" aria-label="Projets voisins">
+  <a class="carte carte--prec" href={href(`/projets/${precedent.id}`)}>
+    <Media
+      type="image"
+      src={vignette(precedent)}
+      alt=""
+      widths={[160, 320]}
+      sizes="160px"
+      class="carte__media"
+    />
+    <span class="carte__texte">
+      <span class="carte__sens">← {t('projet.precedent').toUpperCase()}</span>
+      <span class="carte__titre">{precedent.data.titre}</span>
+    </span>
+  </a>
+
+  <a class="carte carte--suiv" href={href(`/projets/${suivant.id}`)}>
+    <span class="carte__texte">
+      <span class="carte__sens">{t('projet.suivant').toUpperCase()} →</span>
+      <span class="carte__titre">{suivant.data.titre}</span>
+    </span>
+    <Media
+      type="image"
+      src={vignette(suivant)}
+      alt=""
+      widths={[160, 320]}
+      sizes="160px"
+      class="carte__media"
+    />
+  </a>
+</nav>
+
+<style>
+  /* Mobile : les deux cartes se partagent une ligne. La vignette est retirée,
+     elle ne tient pas à côté du titre dans une demi-largeur de 390px. */
+  .navigation {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    padding-block: 40px 64px;
+    border-block-start: 1px solid var(--separator);
+  }
+
+  .carte {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+    min-width: 0;
+    padding: 14px;
+    border: 1px solid var(--border-default);
+    border-radius: 16px;
+    background-color: var(--surface-default);
+    text-decoration: none;
+    transition: border-color 140ms ease;
+  }
+
+  .carte :global(.carte__media) {
+    display: none;
+  }
+
+  .carte:hover {
+    border-color: var(--accent-fill);
+  }
+
+  .carte__texte {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 0;
+  }
+
+  .carte--suiv {
+    justify-content: flex-end;
+  }
+
+  .carte--suiv .carte__texte {
+    align-items: flex-end;
+    text-align: end;
+  }
+
+  .carte__sens {
+    font-weight: var(--fw-medium);
+    font-size: 10px;
+    letter-spacing: 1.2px;
+    color: var(--text-subtle);
+  }
+
+  .carte__titre {
+    font-weight: var(--fw-semibold);
+    font-size: 15px;
+    line-height: 1.3;
+    color: var(--text-primary);
+  }
+
+  /* Tablette : la vignette revient, les cartes restent sur une ligne. */
+  @media (min-width: 640px) {
+    .navigation {
+      gap: 16px;
+    }
+
+    .carte {
+      gap: 16px;
+      padding: 16px;
+      border-radius: 20px;
+    }
+
+    .carte :global(.carte__media) {
+      display: flex;
+      flex-shrink: 0;
+      width: 110px;
+      height: 62px;
+      border-radius: 12px;
+    }
+
+    .carte__sens {
+      font-size: 11px;
+      letter-spacing: 1.56px;
+    }
+
+    .carte__titre {
+      font-size: 18px;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .navigation {
+      gap: 24px;
+      padding-block: 64px 120px;
+    }
+
+    .carte {
+      gap: 20px;
+      padding: 20px;
+    }
+
+    .carte :global(.carte__media) {
+      width: 160px;
+      height: 90px;
+    }
+
+    .carte__sens {
+      font-size: 13px;
+    }
+
+    .carte__titre {
+      font-size: 24px;
+    }
+  }
+</style>

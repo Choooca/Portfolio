@@ -85,7 +85,13 @@ const Element = interactif ? 'button' : 'span';
     --tag-text: var(--tag-active-text);
   }
 
-  button.tag:hover:not(.tag--active) {
+  button.tag:hover:not(.tag--active):not(:disabled) {
     --tag-bg: color-mix(in srgb, var(--tag-base) 28%, transparent);
+  }
+
+  /* Pastille rendue inerte (cartes en mobile) : l'apparence ne change pas,
+     seule l'interaction disparait. */
+  button.tag:disabled {
+    cursor: default;
   }
 </style>

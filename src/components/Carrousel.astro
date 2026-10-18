@@ -1,0 +1,690 @@
+---
+// Carrousel de la page projet — Figma « Carousel » (2006:698) et
+// « Thumbnails » (2006:710).
+//
+// Desktop : carte centrale large, voisines à 35 %, flèches et vignettes.
+// Mobile : défilement au doigt et points.
+// Clavier : flèches gauche/droite. Changer de média met en pause la vidéo.
+import Media from './Media.astro';
+import Icone from './Icone.astro';
+import { pick, type Locale } from '../i18n';
+import type { CollectionEntry } from 'astro:content';
+
+type Medias = CollectionEntry<'projets'>['data']['medias'];
+
+interface Props {
+  medias: Medias;
+  titre: string;
+  locale?: Locale;
+}
+
+const { medias, titre, locale = 'fr' } = Astro.props;
+
+const diapos = medias.map((media, i) => ({
+  index: i,
+  type: media.type,
+  src: media.type === 'image' ? media.src : media.poster,
+  video: media.type === 'video' ? media.src : undefined,
+  legende: pick(media.legende, media.legende_en, locale),
+}));
+---
+
+<section class="carrousel" aria-roledescription="carrousel" aria-label={titre} data-carrousel>
+  <div class="piste" data-piste>
+    {
+      diapos.map((diapo) => (
+        <div
+          class="diapo"
+          role="group"
+          aria-roledescription="diapositive"
+          aria-label={`${diapo.index + 1} sur ${diapos.length} — ${diapo.legende}`}
+          data-diapo={diapo.index}
+        >
+          <Media
+            type={diapo.type}
+            src={diapo.src}
+            video={diapo.video}
+            alt={diapo.legende}
+            prioritaire={diapo.index === 0}
+            sizes="(max-width: 1023px) 100vw, 1280px"
+            class="diapo__media"
+          />
+        </div>
+      ))
+    }
+  </div>
+
+  {
+    diapos.length > 1 && (
+      <>
+        <button type="button" class="fleche fleche--prec" data-carrousel-prec>
+          <Icone nom="chevron-gauche" />
+          <span class="visually-hidden">Média précédent</span>
+        </button>
+        <button type="button" class="fleche fleche--suiv" data-carrousel-suiv>
+          <Icone nom="chevron-droit" />
+          <span class="visually-hidden">Média suivant</span>
+        </button>
+
+        <p class="compteur" aria-live="polite">
+          <span data-carrousel-courant>1</span> / {diapos.length}
+        </p>
+      </>
+    )
+  }
+</section>
+
+{
+  diapos.length > 1 && (
+    <>
+      {/* Vignettes : desktop. */}
+      <div class="vignettes" role="tablist" aria-label="Choisir un média">
+        {diapos.map((diapo) => (
+          <button
+            type="button"
+            class="vignette"
+            role="tab"
+            aria-selected={diapo.index === 0 ? 'true' : 'false'}
+            aria-controls={`diapo-${diapo.index}`}
+            data-vignette={diapo.index}
+          >
+            <Media
+              type="image"
+              src={diapo.src}
+              alt={diapo.legende}
+              widths={[160, 320]}
+              sizes="160px"
+              class="vignette__media"
+            />
+            {diapo.type === 'video' && (
+              <span class="vignette__play" aria-hidden="true">
+                <Icone nom="play" />
+              </span>
+            )}
+            <span class="visually-hidden">
+              Média {diapo.index + 1} — {diapo.legende}
+            </span>
+          </button>
+        ))}
+      </div>
+
+      {/* Points : mobile. De vrais boutons — les flèches et les vignettes
+          sont masquées à cette largeur, sans eux il ne resterait que le
+          glissement au doigt, inutilisable à la souris ou au clavier. */}
+      <div class="points" role="tablist" aria-label="Choisir un média">
+        {diapos.map((diapo) => (
+          <button
+            type="button"
+            class="point"
+            role="tab"
+            aria-selected={diapo.index === 0 ? 'true' : 'false'}
+            data-point={diapo.index}
+          >
+            <span class="visually-hidden">
+              Média {diapo.index + 1} sur {diapos.length}
+            </span>
+          </button>
+        ))}
+      </div>
+    </>
+  )
+}
+
+<p class="legende" data-carrousel-legende>{diapos[0]?.legende}</p>
+
+<style>
+  /* ====================================================================
+     Mobile : une diapo par écran, défilement au doigt.
+     ==================================================================== */
+  .carrousel {
+    position: relative;
+  }
+
+  .piste {
+    display: flex;
+    gap: 12px;
+    padding-inline: var(--gutter);
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+    overscroll-behavior-x: contain;
+  }
+
+  .piste::-webkit-scrollbar {
+    display: none;
+  }
+
+  .diapo {
+    flex: 0 0 100%;
+    scroll-snap-align: center;
+  }
+
+  .diapo :global(.diapo__media) {
+    aspect-ratio: 16 / 9;
+    border-radius: 16px;
+  }
+
+  /* Flèches et compteur : desktop seulement. */
+  .fleche,
+  .compteur,
+  .vignettes {
+    display: none;
+  }
+
+  .points {
+    display: flex;
+    gap: 4px;
+    justify-content: center;
+    padding-block-start: 8px;
+  }
+
+  /* Cible tactile de 24px, pastille visible de 8px au centre. */
+  .point {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+  }
+
+  .point::before {
+    content: '';
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    background-color: var(--text-subtle);
+    opacity: 0.4;
+    transition: opacity 140ms ease, background-color 140ms ease, width 140ms ease;
+  }
+
+  .point[data-actif]::before {
+    width: 20px;
+    background-color: var(--accent-fill);
+    opacity: 1;
+  }
+
+  .legende {
+    padding: 12px var(--gutter) 0;
+    font-size: 13px;
+    color: var(--text-subtle);
+    text-align: center;
+  }
+
+  /* ====================================================================
+     Desktop : carte centrale large, voisines estompées.
+     ==================================================================== */
+  @media (min-width: 1024px) {
+    .piste {
+      gap: 24px;
+      padding-inline: calc(50% - 640px);
+      scroll-snap-type: x mandatory;
+    }
+
+    /* Les clones sont des copies : ils portent la même classe `.diapo`. */
+    .diapo {
+      flex: 0 0 1280px;
+      opacity: 0.35;
+      /* Les diapos latérales amènent à elles au clic. */
+      cursor: pointer;
+      transition: opacity 240ms ease;
+    }
+
+    .diapo[data-actif] {
+      opacity: 1;
+      cursor: default;
+    }
+
+    .diapo:not([data-actif]):hover {
+      opacity: 0.55;
+    }
+
+    .diapo :global(.diapo__media) {
+      border-radius: 24px;
+    }
+
+    .fleche {
+      position: absolute;
+      top: 50%;
+      z-index: 2;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 56px;
+      height: 56px;
+      border: 1px solid var(--border-default);
+      border-radius: 28px;
+      background-color: var(--surface-raised);
+      color: var(--text-primary);
+      box-shadow: 0 8px 24px rgb(0 0 0 / 0.4);
+      transform: translateY(-50%);
+    }
+
+    .fleche--prec {
+      left: calc(50% - 668px);
+    }
+
+    .fleche--suiv {
+      right: calc(50% - 668px);
+    }
+
+    .fleche:hover {
+      background-color: var(--surface-default);
+    }
+
+    .compteur {
+      position: absolute;
+      right: calc(50% - 625px);
+      bottom: 24px;
+      z-index: 2;
+      display: block;
+      padding: 6px 14px;
+      border-radius: 999px;
+      background-color: rgb(0 0 0 / 0.6);
+      color: #f2f1fa;
+      font-weight: var(--fw-medium);
+      font-size: 14px;
+    }
+
+    .vignettes {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      padding-block-start: 24px;
+    }
+
+    .vignette {
+      position: relative;
+      width: 160px;
+      height: 90px;
+      border: 2px solid transparent;
+      border-radius: 10px;
+      opacity: 0.6;
+      transition: opacity 140ms ease;
+    }
+
+    .vignette :global(.vignette__media) {
+      width: 100%;
+      height: 100%;
+      border-radius: 8px;
+    }
+
+    .vignette[aria-selected='true'] {
+      border-color: var(--accent-fill);
+      opacity: 1;
+    }
+
+    .vignette:hover {
+      opacity: 1;
+    }
+
+    .vignette__play {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+    }
+
+    .points {
+      display: none;
+    }
+
+    .legende {
+      padding-block-start: 16px;
+      font-size: 14px;
+    }
+  }
+</style>
+
+<script>
+  const carrousel = document.querySelector<HTMLElement>('[data-carrousel]');
+  const piste = document.querySelector<HTMLElement>('[data-piste]');
+
+  if (carrousel && piste) {
+    // Capture dans des constantes : TypeScript ne garde pas l'affinement du
+    // `if` a l'interieur des fonctions declarees en dessous.
+    const zone = piste;
+    const diapos = Array.from(zone.querySelectorAll<HTMLElement>('[data-diapo]'));
+    const vignettes = Array.from(
+      document.querySelectorAll<HTMLElement>('[data-vignette]'),
+    );
+    const points = Array.from(document.querySelectorAll<HTMLElement>('[data-point]'));
+    const champCourant = document.querySelector<HTMLElement>('[data-carrousel-courant]');
+    const champLegende = document.querySelector<HTMLElement>('[data-carrousel-legende]');
+    const legendes = diapos.map(
+      (d) => d.getAttribute('aria-label')?.split(' — ').slice(1).join(' — ') ?? '',
+    );
+
+    const n = diapos.length;
+
+    /**
+     * Carrousel circulaire : on clone le dernier media avant le premier et le
+     * premier apres le dernier. Sur la premiere diapo, c'est donc la derniere
+     * qui depasse a gauche, et « Precedent » glisse vers la gauche au lieu de
+     * sauter a l'autre bout. Une fois arrive sur un clone, on se replace
+     * silencieusement sur le vrai media equivalent.
+     *
+     * Les clones sont retires de l'arbre d'accessibilite et du parcours de
+     * tabulation : ils ne doivent exister que visuellement.
+     */
+    if (n > 1) {
+      for (const [source, ou] of [
+        [diapos[n - 1]!, 'afterbegin'],
+        [diapos[0]!, 'beforeend'],
+      ] as const) {
+        const clone = source.cloneNode(true) as HTMLElement;
+        clone.removeAttribute('data-diapo');
+        clone.removeAttribute('data-actif');
+        clone.dataset.clone = '';
+
+        // Masqué aux lecteurs d'écran — le média est déjà annoncé à sa vraie
+        // place — mais surtout PAS `inert` : celui-ci bloque aussi les clics,
+        // et la diapo doit pouvoir amener à elle comme les autres.
+        clone.setAttribute('aria-hidden', 'true');
+        for (const cible of clone.querySelectorAll<HTMLElement>(
+          'button, a, [tabindex]',
+        )) {
+          cible.setAttribute('tabindex', '-1');
+        }
+
+        zone.insertAdjacentElement(ou, clone);
+      }
+    }
+
+    /** Toutes les cellules de la piste, clones compris. */
+    const cellules = Array.from(zone.children) as HTMLElement[];
+
+    /**
+     * Position dans la piste : 0 = clone de fin, 1..n = vrais media,
+     * n+1 = clone de debut.
+     *
+     * `position` suit ce qui est reellement affiche (mis a jour par
+     * l'observateur). `vise` est la destination demandee : elle est mise a
+     * jour tout de suite au clic, sinon des clics rapides se calculeraient
+     * tous depuis la meme position de depart et des pas seraient perdus.
+     */
+    let position = n > 1 ? 1 : 0;
+    let vise = position;
+    let courant = 0;
+    let pret = false;
+
+    /**
+     * Vrai pendant un deplacement commande (fleche, vignette, clic).
+     *
+     * Indispensable : un `scrollTo` instantane emet lui aussi un `scrollend`,
+     * aussitot. Sans ce drapeau, la teleportation prealable de `decaler()`
+     * declenchait le recollage, qui voyait le clone et renvoyait au point de
+     * depart — le carrousel ne bougeait plus.
+     */
+    let pilote = false;
+    let minuteurPilote: number;
+
+    function programmer() {
+      pilote = true;
+      clearTimeout(minuteurPilote);
+      // Filet : si l'animation n'arrive jamais a destination, on rend la main.
+      minuteurPilote = window.setTimeout(() => {
+        pilote = false;
+        recoller();
+      }, 800);
+    }
+
+    /**
+     * Les images du carrousel sont en chargement paresseux. Celle vers
+     * laquelle on va doit deja etre la, sinon on voit un blanc au moment du
+     * changement. On passe en chargement immediat la cellule demandee et ses
+     * deux voisines.
+     */
+    function precharger(p: number) {
+      for (const voisin of [p - 1, p, p + 1]) {
+        for (const img of cellules[voisin]?.querySelectorAll('img') ?? []) {
+          img.loading = 'eager';
+        }
+      }
+    }
+
+    const reelDe = (p: number) => {
+      if (n <= 1) return 0;
+      if (p === 0) return n - 1;
+      if (p === n + 1) return 0;
+      return p - 1;
+    };
+
+    /** Cellule dont le centre est le plus proche du defilement actuel. */
+    function celluleCentree() {
+      let meilleure = 0;
+      let ecart = Infinity;
+      cellules.forEach((c, i) => {
+        const cible = c.offsetLeft - (zone.clientWidth - c.clientWidth) / 2;
+        const d = Math.abs(cible - zone.scrollLeft);
+        if (d < ecart) {
+          ecart = d;
+          meilleure = i;
+        }
+      });
+      return meilleure;
+    }
+
+    function marquer(index: number) {
+      courant = Math.max(0, Math.min(index, diapos.length - 1));
+
+      diapos.forEach((d, i) => d.toggleAttribute('data-actif', i === courant));
+      vignettes.forEach((v, i) =>
+        v.setAttribute('aria-selected', i === courant ? 'true' : 'false'),
+      );
+      points.forEach((p, i) => {
+        p.toggleAttribute('data-actif', i === courant);
+        p.setAttribute('aria-selected', i === courant ? 'true' : 'false');
+      });
+
+      if (champCourant) champCourant.textContent = String(courant + 1);
+      if (champLegende) champLegende.textContent = legendes[courant] ?? '';
+
+      // Prévient Media.astro, qui met en pause la vidéo en cours.
+      document.dispatchEvent(new CustomEvent('carrousel:changement'));
+    }
+
+    /** Centre la cellule a la position donnee dans la piste. */
+    function allerPosition(p: number, instantane = false) {
+      const cible = cellules[p];
+      if (!cible) return;
+      zone.scrollTo({
+        left: cible.offsetLeft - (zone.clientWidth - cible.clientWidth) / 2,
+        behavior: instantane ? 'auto' : 'smooth',
+      });
+    }
+
+    /** Va directement a un media (vignettes et points) : pas de boucle ici. */
+    function aller(index: number) {
+      const p = n > 1 ? index + 1 : index;
+      vise = p;
+      programmer();
+      precharger(p);
+      allerPosition(p);
+    }
+
+    /**
+     * Avance ou recule d'un cran, en bouclant.
+     *
+     * Le replacement se fait AVANT l'animation, pas apres : arrive a un bord,
+     * on se teleporte d'abord sur le clone equivalent — qui montre exactement
+     * la meme image, donc le saut est invisible — puis on glisse d'une seule
+     * case. Replacer apres coup faisait courir le saut instantane contre le
+     * defilement fluide encore en cours.
+     */
+    function decaler(pas: number) {
+      if (n <= 1) return;
+
+      let depart = vise;
+      if (pas < 0 && depart === 1) depart = n + 1;
+      else if (pas > 0 && depart === n) depart = 0;
+
+      if (depart !== vise) {
+        position = depart;
+        allerPosition(depart, true);
+      }
+
+      vise = depart + pas;
+      programmer();
+      precharger(vise);
+      allerPosition(vise);
+    }
+
+    /**
+     * Filet de securite pour le glissement au doigt, qui peut s'arreter sur
+     * un clone sans passer par `decaler()`. On se fie a la position de
+     * defilement reelle, pas a `position` : celle-ci peut etre en retard
+     * pendant une animation, et agir dessus annulait le deplacement en cours.
+     */
+    function recoller() {
+      if (n <= 1 || !pret) return;
+      const p = celluleCentree();
+
+      // Pendant un deplacement commande, on ignore les fins de defilement
+      // intermediaires et on ne rend la main qu'une fois arrive.
+      if (pilote) {
+        if (p !== vise) return;
+        pilote = false;
+        clearTimeout(minuteurPilote);
+      }
+
+      // La fin de defilement fait autorite. L'observateur ne previent qu'au
+      // franchissement d'un seuil : des allers-retours rapides pouvaient ne
+      // jamais en franchir, et l'etat affiche restait sur l'ancien media.
+      vise = p;
+      position = p;
+      const reel = reelDe(p);
+      if (reel !== courant) marquer(reel);
+
+      if (p !== 0 && p !== n + 1) return;
+      vise = p === 0 ? n : 1;
+      position = vise;
+      precharger(vise);
+      allerPosition(vise, true);
+    }
+
+    document
+      .querySelector('[data-carrousel-prec]')
+      ?.addEventListener('click', () => decaler(-1));
+    document
+      .querySelector('[data-carrousel-suiv]')
+      ?.addEventListener('click', () => decaler(1));
+
+    vignettes.forEach((v, i) => v.addEventListener('click', () => aller(i)));
+    points.forEach((p, i) => p.addEventListener('click', () => aller(i)));
+
+    /**
+     * Les diapos qui dépassent sur les côtés amènent à elles au clic, comme
+     * les flèches. `stopPropagation` empêche le bouton lecture d'une vidéo
+     * latérale de se déclencher : on veut l'amener au centre d'abord.
+     */
+    zone.addEventListener('click', (event) => {
+      const cellule = (event.target as HTMLElement).closest<HTMLElement>(
+        '[data-diapo], [data-clone]',
+      );
+      if (!cellule) return;
+      const p = cellules.indexOf(cellule);
+      const estClone = cellule.hasAttribute('data-clone');
+      if (p < 0 || (!estClone && p === vise)) return;
+      event.preventDefault();
+      event.stopPropagation();
+
+      // Cliquer un clone revient a faire un pas dans sa direction : on passe
+      // par `decaler()` pour profiter de la teleportation prealable.
+      if (estClone) decaler(p === 0 ? -1 : 1);
+      else {
+        vise = p;
+        programmer();
+        precharger(p);
+        allerPosition(p);
+      }
+    });
+
+    // Centrage initial AVANT de poser l'observateur, pour qu'il parte de la
+    // bonne position de défilement.
+    allerPosition(position, true);
+
+    // Le défilement (doigt, flèches, clic) fait foi : on observe la cellule
+    // centrée, clones compris.
+    const observateur = new IntersectionObserver(
+      (entrees) => {
+        for (const entree of entrees) {
+          if (!entree.isIntersecting) continue;
+          const p = cellules.indexOf(entree.target as HTMLElement);
+          if (p < 0) continue;
+          position = p;
+          precharger(p);
+          const reel = reelDe(p);
+          if (reel !== courant) marquer(reel);
+        }
+      },
+      { root: zone, threshold: 0.6 },
+    );
+    cellules.forEach((c) => observateur.observe(c));
+
+    /**
+     * Au redimensionnement, `scroll-snap` recale le defilement tout seul et
+     * peut atterrir sur un autre media. On recentre celui qui etait affiche.
+     */
+    let minuteurTaille: number;
+    addEventListener('resize', () => {
+      clearTimeout(minuteurTaille);
+      minuteurTaille = window.setTimeout(() => allerPosition(vise, true), 120);
+    });
+
+    // `scrollend` n'est pas partout : repli sur une temporisation.
+    if ('onscrollend' in window) {
+      zone.addEventListener('scrollend', recoller);
+    } else {
+      let minuteur: number;
+      zone.addEventListener('scroll', () => {
+        clearTimeout(minuteur);
+        minuteur = window.setTimeout(recoller, 140);
+      });
+    }
+
+    // Flèches du clavier. Les vignettes et les points sont hors du <section>,
+    // il faut donc écouter aussi sur leurs conteneurs.
+    const auClavier = (event: KeyboardEvent) => {
+      if (event.key === 'ArrowLeft') {
+        event.preventDefault();
+        decaler(-1);
+      } else if (event.key === 'ArrowRight') {
+        event.preventDefault();
+        decaler(1);
+      }
+    };
+
+    carrousel.addEventListener('keydown', auClavier);
+    document
+      .querySelector('.vignettes')
+      ?.addEventListener('keydown', auClavier as EventListener);
+    document
+      .querySelector('.points')
+      ?.addEventListener('keydown', auClavier as EventListener);
+
+    marquer(0);
+
+    // Les images peuvent encore changer la mise en page : on recentre une
+    // fois tout charge, puis on autorise le recollage.
+    const demarrer = () => {
+      position = n > 1 ? 1 : 0;
+      vise = position;
+      precharger(position);
+      // Les partenaires de boucle (premier et dernier media, et leurs clones)
+      // doivent etre prets des le depart : ce sont eux qu'on voit apparaitre
+      // en bouclant, et attendre leur telechargement a ce moment-la se
+      // remarque immediatement.
+      if (n > 1) precharger(n);
+      allerPosition(position, true);
+      marquer(0);
+      requestAnimationFrame(() => {
+        pret = true;
+      });
+    };
+
+    if (document.readyState === 'complete') requestAnimationFrame(demarrer);
+    else addEventListener('load', demarrer, { once: true });
+  }
+</script>

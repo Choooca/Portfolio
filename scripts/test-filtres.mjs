@@ -179,6 +179,62 @@ const url = (page) => new URL(page.url()).search;
   const page = await ctx.newPage();
   await page.goto(`http://localhost:${PORT}${BASE}/bibliotheque`, { waitUntil: 'networkidle' });
 
+  console.log('\n## Pastilles des cartes en mobile');
+  // À cette largeur le filtrage passe par le panneau : toucher une pastille
+  // dans une carte serait ambigu avec le fait de toucher la carte.
+  verifier(
+    'pastilles des cartes inertes',
+    await page.$$eval('[data-carte] button[data-filtre-groupe]', (b) =>
+      b.every((x) => x.disabled),
+    ),
+    true,
+  );
+  verifier(
+    'hors du parcours clavier',
+    await page.$$eval('[data-carte] button[data-filtre-groupe]', (b) =>
+      b.every((x) => x.tabIndex === -1 || x.disabled),
+    ),
+    true,
+  );
+  // Les pastilles sont posees au-dessus de la zone cliquable du titre :
+  // une fois inertes, elles ne doivent pas bloquer l'ouverture du projet.
+  verifier(
+    'elles laissent passer le clic vers la carte',
+    await page.$eval('[data-carte] .pastilles', (e) => getComputedStyle(e).pointerEvents),
+    'none',
+  );
+
+  // On touche une pastille : c'est le projet qui doit s'ouvrir, sans filtrer.
+  // `force` contourne le fait que le bouton est desactive, mais l'evenement
+  // souris reste reel : c'est bien le navigateur qui decide de la cible.
+  await page
+    .locator('[data-carte] button[data-filtre-groupe]')
+    .first()
+    .click({ force: true });
+  await page.waitForLoadState('networkidle');
+  verifier(
+    'toucher une pastille ouvre bien le projet',
+    new URL(page.url()).pathname,
+    `${BASE}/projets/deferred-forward-rendering`,
+  );
+  verifier('et ne filtre rien', new URL(page.url()).search, '');
+
+  await page.goto(`http://localhost:${PORT}${BASE}/bibliotheque`, {
+    waitUntil: 'networkidle',
+  });
+
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.waitForTimeout(300);
+  verifier(
+    'elles redeviennent actives en desktop',
+    await page.$$eval('[data-carte] button[data-filtre-groupe]', (b) =>
+      b.every((x) => !x.disabled),
+    ),
+    true,
+  );
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.waitForTimeout(300);
+
   console.log('\n## Panneau du bas (mobile)');
   verifier('panneau ferme au chargement', await page.$eval('[data-feuille]', (e) => e.hidden), true);
   await page.click('[data-feuille-ouvrir]');

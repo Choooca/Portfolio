@@ -39,6 +39,8 @@ const en: Partial<Record<keyof typeof fr, string>> = {
   'bib.vide.texte': 'No project matches the active filters.',
 
   // Project page
+  'projet.fiche': 'Project sheet',
+  'projet.contexte': 'Context',
   'projet.role': 'Role',
   'projet.monRole': 'My role',
   'projet.duree': 'Duration',
@@ -51,6 +53,7 @@ const en: Partial<Record<keyof typeof fr, string>> = {
   'projet.lien.github': 'Source code',
   'projet.lien.video': 'Video',
   'projet.precedent': 'Previous project',
+  'projet.retourBibliotheque': 'Library',
   'projet.suivant': 'Next project',
 
   // Media

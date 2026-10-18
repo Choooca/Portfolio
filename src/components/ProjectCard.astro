@@ -215,6 +215,19 @@ const filtres = {
     padding-block-start: 6px;
   }
 
+  /*
+    Sous 1024px les pastilles ne filtrent plus (voir le script). Elles sont
+    posees au-dessus de la zone cliquable du titre pour pouvoir etre
+    cliquables elles-memes : une fois inertes, elles interceptaient le
+    toucher sans rien en faire et empechaient d'ouvrir le projet. On laisse
+    donc passer le clic jusqu'a la carte.
+  */
+  @media (max-width: 1023px) {
+    .pastilles {
+      pointer-events: none;
+    }
+  }
+
   /* ====================================================================
      Tablette et desktop (>= 640px) : carte complete, image en haut.
      ==================================================================== */
@@ -337,6 +350,24 @@ const filtres = {
 </style>
 
 <script>
+  // Sous 1024px, les pastilles des cartes ne filtrent plus : à cette largeur
+  // le filtrage passe par le panneau « Filtres », et toucher une pastille
+  // dans une carte est ambigu avec le fait de toucher la carte elle-même.
+  // `disabled` suffit : il retire le bouton du parcours clavier et empêche
+  // le clic, donc le gestionnaire de Filtres.astro ne le voit jamais.
+  const bureau = window.matchMedia('(min-width: 1024px)');
+
+  function majPastillesCartes() {
+    for (const pastille of document.querySelectorAll<HTMLButtonElement>(
+      '[data-carte] button[data-filtre-groupe]',
+    )) {
+      pastille.disabled = !bureau.matches;
+    }
+  }
+
+  majPastillesCartes();
+  bureau.addEventListener('change', majPastillesCartes);
+
   // Aperçu video au survol : rien n'est telecharge avant le premier survol.
   // Desactive au toucher et si le visiteur a demande moins d'animations.
   const survolPossible = window.matchMedia('(hover: hover)').matches;

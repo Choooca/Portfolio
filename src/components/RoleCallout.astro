@@ -1,0 +1,69 @@
+---
+// Mon rôle — Figma « Mon rôle » (2004:644).
+// Affiché UNIQUEMENT pour les projets en équipe (`equipe > 1`), en même temps
+// que la ligne « Rôle » de la fiche projet.
+import { useTranslations, type Locale } from '../i18n';
+
+interface Props {
+  role: string;
+  contribution: string;
+  locale?: Locale;
+}
+
+const { role, contribution, locale = 'fr' } = Astro.props;
+const t = useTranslations(locale);
+---
+
+<aside class="encadre">
+  <p class="encadre__titre">{t('projet.monRole').toUpperCase()}</p>
+  <p class="encadre__role">{role}</p>
+  <p class="encadre__texte">{contribution}</p>
+</aside>
+
+<style>
+  .encadre {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding: 28px 32px;
+    /* Fond à 5 % mais bordure gauche à pleine opacité. */
+    border-inline-start: 3px solid var(--accent-fill);
+    border-radius: 16px;
+    background-color: var(--role-callout-bg);
+  }
+
+  .encadre__titre {
+    font-weight: var(--fw-medium);
+    font-size: 13px;
+    letter-spacing: 1.95px;
+    color: var(--accent-text);
+  }
+
+  .encadre__role {
+    font-weight: var(--fw-medium);
+    font-size: 22px;
+    color: var(--text-primary);
+  }
+
+  .encadre__texte {
+    font-weight: var(--fw-light);
+    font-size: 18px;
+    line-height: 1.7;
+    color: var(--text-secondary);
+  }
+
+  @media (max-width: 639px) {
+    .encadre {
+      gap: 10px;
+      padding: 20px;
+    }
+
+    .encadre__role {
+      font-size: 18px;
+    }
+
+    .encadre__texte {
+      font-size: 15px;
+    }
+  }
+</style>

@@ -33,6 +33,8 @@ export default {
   'bib.vide.texte': 'Aucun projet ne correspond aux filtres actifs.',
 
   // Page projet
+  'projet.fiche': 'Fiche projet',
+  'projet.contexte': 'Contexte',
   'projet.role': 'Rôle',
   'projet.monRole': 'Mon rôle',
   'projet.duree': 'Durée',
@@ -45,6 +47,7 @@ export default {
   'projet.lien.github': 'Code source',
   'projet.lien.video': 'Vidéo',
   'projet.precedent': 'Projet précédent',
+  'projet.retourBibliotheque': 'Bibliothèque',
   'projet.suivant': 'Projet suivant',
 
   // Médias

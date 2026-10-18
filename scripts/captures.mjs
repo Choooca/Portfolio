@@ -60,6 +60,9 @@ const PAGES = [
   { nom: 'bibliotheque', chemin: '/bibliotheque' },
   { nom: 'bib-filtre', chemin: '/bibliotheque?domaine=graphique' },
   { nom: 'bib-vide', chemin: '/bibliotheque?domaine=graphique&langage=csharp' },
+  // Les deux variantes de page projet : en equipe (avec « Mon rôle ») et solo.
+  { nom: 'projet-equipe', chemin: '/projets/diamond-seams' },
+  { nom: 'projet-solo', chemin: '/projets/deferred-forward-rendering' },
 ];
 
 const FORMATS = [
@@ -98,9 +101,29 @@ for (const page of PAGES) {
       });
       await onglet.evaluate(() => document.fonts.ready);
 
+      // `fullPage` redimensionne la fenetre en interne, ce qui fait recaler
+      // les conteneurs a scroll-snap (le carrousel changeait de media). On
+      // agrandit donc la fenetre nous-memes, on laisse la page se replacer,
+      // puis on capture sans fullPage.
+      const hauteur = await onglet.evaluate(
+        () => document.documentElement.scrollHeight,
+      );
+      await onglet.setViewportSize({
+        width: format.largeur,
+        height: Math.min(hauteur, 20000),
+      });
+      await onglet.waitForTimeout(300);
+
       const nom = `${page.nom}-${format.nom}-${theme}.png`;
-      await onglet.screenshot({ path: join(SORTIE, nom), fullPage: true });
+      await onglet.screenshot({ path: join(SORTIE, nom) });
       faites.push(nom);
+
+      // On revient a la hauteur nominale pour les captures suivantes.
+      await onglet.setViewportSize({
+        width: format.largeur,
+        height: format.hauteur,
+      });
+      await onglet.waitForTimeout(200);
 
       // En mobile, on capture aussi le panneau de filtres ouvert.
       if (format.nom === 'mobile' && page.nom === 'bibliotheque') {

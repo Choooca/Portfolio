@@ -1,0 +1,165 @@
+---
+// Media — Figma « Media » (63:466), variantes Image et Vidéo.
+//
+// Une image s'affiche directement. Une vidéo montre son poster avec un bouton
+// lecture et le badge « VIDÉO » ; elle ne se lance qu'au clic, avec le son
+// (règle du carrousel de la page projet).
+import { Image } from 'astro:assets';
+import Icone from './Icone.astro';
+import type { ImageMetadata } from 'astro';
+
+interface Props {
+  type: 'image' | 'video';
+  /** Image, ou poster de la vidéo. Absent : placeholder. */
+  src?: ImageMetadata;
+  /** Chemin du fichier vidéo depuis public/. */
+  video?: string;
+  alt: string;
+  /** Largeurs générées par astro:assets. */
+  widths?: number[];
+  sizes?: string;
+  /** `true` pour charger l'image sans attendre (premier média visible). */
+  prioritaire?: boolean;
+  class?: string;
+}
+
+const {
+  type,
+  src,
+  video,
+  alt,
+  widths = [400, 800, 1280, 1920],
+  sizes = '100vw',
+  prioritaire = false,
+  class: className,
+} = Astro.props;
+---
+
+<div
+  class:list={['media', className]}
+  data-media
+  data-type={type}
+  data-video={type === 'video' ? video : undefined}
+>
+  {
+    src ? (
+      <Image
+        class="media__image"
+        src={src}
+        alt={alt}
+        widths={widths}
+        sizes={sizes}
+        loading={prioritaire ? 'eager' : 'lazy'}
+      />
+    ) : (
+      <span class="media__vide">
+        <Icone nom="media-48" />
+      </span>
+    )
+  }
+
+  {
+    type === 'video' && (
+      <>
+        <span class="media__badge">VIDÉO</span>
+        <button type="button" class="media__lecture" data-media-lecture>
+          <Icone nom="play" />
+          <span class="visually-hidden">Lire la vidéo — {alt}</span>
+        </button>
+      </>
+    )
+  }
+</div>
+
+<style>
+  .media {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    border-radius: 16px;
+    background-color: var(--media-placeholder);
+    color: var(--media-placeholder-icon);
+  }
+
+  .media__image,
+  .media :global(video) {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .media__vide {
+    display: inline-flex;
+    width: 48px;
+    height: 48px;
+  }
+
+  /* Badge « VIDÉO », en haut à gauche. */
+  .media__badge {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    background-color: rgb(0 0 0 / 0.55);
+    color: #fff;
+    font-weight: var(--fw-medium);
+    font-size: 11px;
+    letter-spacing: 1.32px;
+  }
+
+  /* Bouton lecture, centré. */
+  .media__lecture {
+    position: absolute;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 56px;
+    height: 56px;
+    padding-inline-start: 4px;
+    border-radius: 28px;
+    background-color: var(--chip-bg);
+    color: var(--accent-on);
+    transition: transform 140ms ease;
+  }
+
+  .media__lecture:hover {
+    transform: scale(1.06);
+  }
+
+  /* Une fois la vidéo lancée, badge et bouton disparaissent. */
+  .media[data-lecture] .media__badge,
+  .media[data-lecture] .media__lecture,
+  .media[data-lecture] .media__image {
+    display: none;
+  }
+</style>
+
+<script>
+  // La vidéo n'est créée qu'au clic : rien n'est téléchargé avant.
+  document.addEventListener('click', (event) => {
+    const bouton = (event.target as HTMLElement).closest<HTMLElement>(
+      '[data-media-lecture]',
+    );
+    if (!bouton) return;
+
+    const media = bouton.closest<HTMLElement>('[data-media]');
+    const source = media?.dataset.video;
+    if (!media || !source) return;
+
+    const video = document.createElement('video');
+    video.src = source;
+    video.controls = true;
+    video.autoplay = true;
+    video.playsInline = true;
+    media.append(video);
+    media.dataset.lecture = '';
+  });
+
+  // Changer de média met en pause la vidéo en cours (règle du carrousel).
+  document.addEventListener('carrousel:changement', () => {
+    for (const video of document.querySelectorAll('video')) video.pause();
+  });
+</script>

@@ -480,6 +480,13 @@ const reseaux = [
       definirEtat(Boolean(panneau.hidden));
     });
 
+    // Un lien du panneau le referme. Indispensable pour « Contact », qui est
+    // une ancre de la meme page : sans ca le panneau resterait ouvert
+    // par-dessus le pied de page.
+    panneau.addEventListener('click', (event) => {
+      if ((event.target as HTMLElement).closest('a[href]')) definirEtat(false);
+    });
+
     document.addEventListener('keydown', (event) => {
       if (panneau.hidden) return;
 

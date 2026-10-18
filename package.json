@@ -12,7 +12,9 @@
     "preview": "astro preview",
     "astro": "astro",
     "captures": "node scripts/captures.mjs",
-    "test:filtres": "node scripts/test-filtres.mjs"
+    "test:filtres": "node scripts/test-filtres.mjs",
+    "test:projet": "node scripts/test-projet.mjs",
+    "test": "npm run test:filtres && npm run test:projet"
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.10",
