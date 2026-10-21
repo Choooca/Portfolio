@@ -48,7 +48,14 @@ function servir() {
         });
         res.end(contenu);
       } catch {
-        res.writeHead(404).end('404');
+        // Comme GitHub Pages : on sert le 404.html genere par Astro.
+        try {
+          const page404 = await readFile(join(RACINE, '404.html'));
+          res.writeHead(404, { 'Content-Type': TYPES['.html'] });
+          res.end(page404);
+        } catch {
+          res.writeHead(404).end('404');
+        }
       }
     });
     serveur.listen(PORT, () => resoudre(serveur));
@@ -63,6 +70,7 @@ const PAGES = [
   // Les deux variantes de page projet : en equipe (avec « Mon rôle ») et solo.
   { nom: 'projet-equipe', chemin: '/projets/diamond-seams' },
   { nom: 'projet-solo', chemin: '/projets/deferred-forward-rendering' },
+  { nom: '404', chemin: '/cette-page-nexiste-pas' },
 ];
 
 const FORMATS = [

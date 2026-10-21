@@ -123,7 +123,7 @@ const cartes = projets.map((projet) => {
   }
 
   {/* ---- Rangee glissante : tablette et mobile ---- */}
-  <ul class="rangee" role="list">
+  <ul class="rangee" role="list" data-galerie-rangee>
     {
       cartes.map((carte) => (
         <li>
@@ -147,6 +147,9 @@ const cartes = projets.map((projet) => {
     display: flex;
     gap: 16px;
     margin: 0;
+    /* Respiration verticale : sans elle le contour de focus d'une carte
+       serait rogne par le conteneur a defilement. */
+    padding-block: 8px;
     padding-inline: var(--gutter);
     overflow-x: auto;
     scroll-snap-type: x mandatory;
@@ -377,6 +380,26 @@ const cartes = projets.map((projet) => {
 
 <script>
   import { creerCarrousel } from '../lib/carrousel';
+
+  /**
+   * Rangee mobile : a la tabulation, le navigateur amene bien la carte
+   * focalisee a l'ecran, mais `scroll-snap-type: x mandatory` recolle
+   * aussitot au point d'accrochage le plus proche — souvent celui d'ou l'on
+   * venait, et la carte repart hors champ, contour de focus compris.
+   *
+   * On centre donc la carte nous-memes, sur sa position d'accrochage exacte
+   * pour que le recollage n'ait plus rien a corriger.
+   */
+  const rangee = document.querySelector<HTMLElement>('[data-galerie-rangee]');
+
+  rangee?.addEventListener('focusin', (event) => {
+    const item = (event.target as HTMLElement).closest('li');
+    if (!item || item.parentElement !== rangee) return;
+    rangee.scrollTo({
+      left: item.offsetLeft - (rangee.clientWidth - item.clientWidth) / 2,
+      behavior: 'auto',
+    });
+  });
 
   const piste = document.querySelector<HTMLElement>('[data-galerie-piste]');
 

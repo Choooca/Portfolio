@@ -1,0 +1,99 @@
+---
+// 404 — Figma « Screen / 404 » (2014:3318) et « Mobile / 404 » (2014:3378).
+//
+// GitHub Pages sert automatiquement le 404.html genere par Astro.
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { href } from '../lib/url';
+import { useTranslations, DEFAULT_LOCALE } from '../i18n';
+
+const locale = DEFAULT_LOCALE;
+const t = useTranslations(locale);
+---
+
+<BaseLayout titre={t('404.titre')} description={t('404.texte')} locale={locale}>
+  <section class="erreur wrapper">
+    {/* Decoratif : le message qui suit porte deja l'information. */}
+    <p class="erreur__code" aria-hidden="true">404</p>
+
+    <h1>{t('404.titre')}</h1>
+    <p class="erreur__texte">{t('404.texte')}</p>
+
+    <div class="erreur__actions">
+      <a class="bouton bouton--principal" href={href('/')}>{t('404.accueil')}</a>
+      <a class="bouton" href={href('/bibliotheque')}>{t('404.bibliotheque')}</a>
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .erreur {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    align-items: center;
+    padding-block: 72px 96px;
+    text-align: center;
+  }
+
+  .erreur__code {
+    font-weight: var(--fw-semibold);
+    font-size: clamp(5rem, 24vw, 12.5rem);
+    line-height: 1;
+    letter-spacing: -0.06em;
+    color: var(--accent-text);
+  }
+
+  h1 {
+    font-weight: var(--fw-semibold);
+    font-size: clamp(1.25rem, 5vw, 2rem);
+    letter-spacing: -0.32px;
+    text-wrap: balance;
+    color: var(--text-primary);
+  }
+
+  .erreur__texte {
+    font-weight: var(--fw-light);
+    font-size: clamp(0.9375rem, 3vw, 1.125rem);
+    text-wrap: pretty;
+    color: var(--text-muted);
+  }
+
+  .erreur__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    justify-content: center;
+    padding-block-start: 20px;
+  }
+
+  .bouton {
+    padding: 14px 22px;
+    border: 1px solid var(--border-default);
+    border-radius: 12px;
+    color: var(--text-primary);
+    font-weight: var(--fw-semibold);
+    font-size: 16px;
+    text-decoration: none;
+  }
+
+  .bouton:hover {
+    background-color: var(--surface-raised);
+  }
+
+  .bouton--principal {
+    border-color: var(--accent-fill);
+    background-color: var(--accent-fill);
+    color: var(--accent-on);
+  }
+
+  .bouton--principal:hover {
+    background-color: color-mix(in srgb, var(--accent-fill) 85%, white);
+  }
+
+  @media (min-width: 1024px) {
+    .erreur {
+      gap: 20px;
+      padding-block: 160px 180px;
+    }
+  }
+</style>

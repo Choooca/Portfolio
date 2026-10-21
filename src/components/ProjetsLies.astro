@@ -1,0 +1,58 @@
+---
+// Projets liés — Figma « Projets liés » (2024:3529), sous la fiche projet
+// dans la colonne de droite.
+//
+// Le choix est manuel : le champ `lies` du frontmatter donne les slugs, dans
+// l'ordre voulu. La résolution et la validation se font dans
+// src/pages/projets/[slug].astro, au build.
+import ProjectCard from './ProjectCard.astro';
+import { useTranslations, type Locale } from '../i18n';
+import type { CollectionEntry } from 'astro:content';
+
+interface Props {
+  projets: CollectionEntry<'projets'>[];
+  locale?: Locale;
+}
+
+const { projets, locale = 'fr' } = Astro.props;
+const t = useTranslations(locale);
+---
+
+<section class="lies" aria-labelledby="titre-lies">
+  <h2 class="lies__titre" id="titre-lies">{t('projet.lies').toUpperCase()}</h2>
+
+  <ul class="lies__liste" role="list">
+    {
+      projets.map((p) => (
+        <li>
+          <ProjectCard projet={p} locale={locale} compact />
+        </li>
+      ))
+    }
+  </ul>
+</section>
+
+<style>
+  .lies {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  /* Même libellé que « FICHE PROJET » : les deux blocs se répondent. */
+  .lies__titre {
+    font-weight: var(--fw-medium);
+    font-size: 13px;
+    letter-spacing: 1.95px;
+    color: var(--text-subtle);
+  }
+
+  .lies__liste {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+</style>

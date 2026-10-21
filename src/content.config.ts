@@ -105,6 +105,13 @@ const projets = defineCollection({
         // Video de 5-10 s, muette, jouee au survol de la carte (desktop).
         apercu: z.string().optional(),
 
+        // --- Projets lies -------------------------------------------------
+        // Choix manuel : les slugs (= noms de fichiers) des projets montres
+        // dans la colonne de droite, dans cet ordre. Zod ne voit qu'un
+        // document a la fois : l'existence de chaque slug est verifiee au
+        // build par src/pages/projets/[slug].astro.
+        lies: z.array(z.string().min(1)).default([]),
+
         // --- Mise en avant et tri ----------------------------------------
         featured: z.boolean().default(false),
         ordre: z.number().int().optional(),

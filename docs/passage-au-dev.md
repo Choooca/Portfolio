@@ -51,11 +51,13 @@ Un projet = un fichier `src/content/projets/<slug>.md`. L'en-tête (frontmatter)
 | `liens` | `jouer`, `github`, `video` (URL) | non | Boutons de la fiche ; bouton absent si lien vide |
 | `medias` | liste ordonnée d'images/vidéos + légende | oui (≥ 1) | Carrousel ; le 1er sert de vignette |
 | `apercu` | vidéo courte (5–10 s, muette) | non | Lecture au survol de la carte |
+| `lies` | liste de slugs | non | Section « Projets liés » de la page projet |
 | `featured` | booléen | non | Apparaît dans le carrousel de l'accueil |
 | `ordre` | nombre | non | Ordre dans sa section (sinon alphabétique) |
 
 - **Cartes** : toutes les valeurs de `domaine`, `moteur` et `langage` s'affichent en pastilles, dans cet ordre ; elles passent à la ligne et la carte s'allonge si besoin. Le détail des `technos` reste réservé à la fiche projet. *(Décidé au dev le 16/10/2026 : la maquette n'en prévoyait qu'une par dimension, mais une carte pouvait alors ressortir d'un filtre sans montrer la pastille correspondante.)*
 - **Précédent / suivant** : projets voisins dans la même section, en boucle.
+- **Projets liés** : choix manuel, par le champ `lies` qui liste des slugs dans l'ordre voulu. Un slug inexistant, ou un projet qui se cite lui-même, arrête le build avec le nom du fichier fautif. Sans `lies`, la section ne s'affiche pas. *(Section ajoutée à la maquette le 21/10/2026, nœud 2024:3529.)*
 - **Traduction** : les champs texte (`genre`, `pitch`, `role`, `contribution`) et le corps existent en FR et EN ; si l'EN manque, on affiche le FR.
 
 ## Bibliothèque et filtres
@@ -95,11 +97,14 @@ Trois largeurs de référence. La tablette n'est pas maquettée : elle se dédui
 | Barre de navigation | Collée en haut | Collée en haut | Collée en haut, menu burger |
 | Barre de filtres (Bibliothèque) | Collée sous la navigation | Collée sous la navigation | Collée sous la navigation (bouton « Filtres ») |
 | Fiche projet | Collée dans la colonne de droite | Sous le carrousel, non collée | Sous le carrousel, non collée |
+| Projets liés | Collés sous la fiche, dans la colonne de droite | Après l'article, avant « Projet suivant » | Après l'article, avant « Projet suivant » |
 | Grille de la Bibliothèque | 4 cartes par ligne | 2 cartes par ligne | Liste compacte, 1 par ligne |
 | Carrousel de l'accueil | Carte centrale large + cartes latérales | Cartes de 300 px qu'on fait glisser | Cartes de 300 px qu'on fait glisser |
 | Marges latérales | 120 px (contenu max 1680 px) | 40 px | 20 px |
 
 La fiche projet n'est collée qu'en desktop : en mobile, elle prendrait trop de place à l'écran.
+
+En desktop, fiche et projets liés sont collés **ensemble**, comme dans la maquette. Les deux blocs mis bout à bout peuvent dépasser la hauteur d'un écran : passé cette hauteur, la colonne défile d'elle-même, sinon le bas de la liste resterait hors d'atteinte. Tant qu'elle tient, rien ne défile et aucune barre n'apparaît. *(Décidé au dev le 21/10/2026.)*
 
 ## Thème clair / sombre
 

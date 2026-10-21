@@ -100,9 +100,13 @@
    astro.config.mjs (voir src/lib/code-block.mjs).
    ========================================================================== */
 
+/*
+  Pas de `overflow: hidden` ici : le <pre> est focalisable au clavier (il
+  defile horizontalement) et son contour de focus serait rogne. Chaque
+  partie porte donc ses propres coins arrondis — 15px = 16 moins la bordure.
+*/
 .bloc-code {
   margin: 0;
-  overflow: hidden;
   border: 1px solid var(--border-default);
   border-radius: 16px;
   background-color: var(--bg-band);
@@ -115,6 +119,8 @@
   gap: 16px;
   padding: 12px 18px;
   border-block-end: 1px solid var(--border-default);
+  border-start-start-radius: 15px;
+  border-start-end-radius: 15px;
   background-color: var(--surface-default);
 }
 
@@ -162,6 +168,8 @@
 .bloc-code pre {
   margin: 0;
   padding: 20px 24px 24px 20px;
+  border-end-start-radius: 15px;
+  border-end-end-radius: 15px;
   overflow-x: auto;
   font-size: 13px;
   line-height: 1.65;

@@ -708,10 +708,28 @@ const groupesUtiles = GROUPES.filter((g) => options[g].length > 0);
         return;
       }
 
-      if (cible.closest('[data-reinitialiser]')) {
-        appliquer(etatVide());
-        fermerFeuille();
-        return;
+    });
+
+    /**
+     * Reinitialisation : delegation sur le document, pas sur la racine.
+     * Le bouton de l'etat « aucun resultat » vit dans la page, hors de ce
+     * composant — pose sur la racine, le gestionnaire ne le voyait jamais.
+     */
+    document.addEventListener('click', (event) => {
+      const bouton = (event.target as HTMLElement).closest<HTMLElement>(
+        '[data-reinitialiser]',
+      );
+      if (!bouton) return;
+
+      // Le bouton de l'etat vide disparait avec lui : sans cela le focus
+      // retomberait sur <body> et la tabulation repartirait du haut de page.
+      const horsFiltres = !racine!.contains(bouton);
+
+      appliquer(etatVide());
+      fermerFeuille();
+
+      if (horsFiltres) {
+        racine!.querySelector<HTMLElement>('[data-menu-bouton]')?.focus();
       }
     });
 

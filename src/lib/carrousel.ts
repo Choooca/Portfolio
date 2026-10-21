@@ -231,6 +231,29 @@ export function creerCarrousel(options: OptionsCarrousel): Carrousel | null {
     }
   });
 
+  /**
+   * Un element focalisable d'une diapo laterale amene sa diapo au centre.
+   * Sans cela, la tabulation deplacerait le focus sur une carte a moitie
+   * hors de la piste, dont le contour de focus serait rogne.
+   *
+   * Le recentrage est instantane : il accompagne un deplacement du focus,
+   * pas un geste de navigation.
+   */
+  zone.addEventListener('focusin', (event) => {
+    const cellule = (event.target as HTMLElement).closest<HTMLElement>(
+      `${selecteurDiapo}, [data-clone]`,
+    );
+    if (!cellule) return;
+    const p = cellules.indexOf(cellule);
+    if (p < 0 || p === vise) return;
+    vise = p;
+    position = p;
+    precharger(p);
+    allerPosition(p, true);
+    const reel = reelDe(p);
+    if (reel !== courant) marquer(reel);
+  });
+
   // Centrage initial AVANT de poser l'observateur, pour qu'il parte de la
   // bonne position de defilement.
   allerPosition(position, true);

@@ -120,6 +120,20 @@ const url = (page) => new URL(page.url()).search;
   verifier('URL nettoyee', url(page), '');
   verifier('barre « filtres actifs » masquee', await page.$eval('[data-actifs]', (e) => e.hidden), true);
 
+  // Ce bouton-la vit dans la page, hors du composant Filtres : la
+  // delegation du clic doit donc porter sur le document.
+  console.log('\n## Reinitialiser depuis l\'etat « aucun resultat »');
+  await aller('?domaine=graphique&langage=csharp');
+  await page.click('[data-vide-global] [data-reinitialiser]');
+  verifier('les 2 cartes reviennent', (await visibles(page)).length, 2);
+  verifier('URL nettoyee', url(page), '');
+  verifier('etat vide masque', await page.$eval('[data-vide-global]', (e) => e.hidden), true);
+  verifier(
+    'le focus ne retombe pas sur le body',
+    await page.evaluate(() => document.activeElement?.hasAttribute('data-menu-bouton') ?? false),
+    true,
+  );
+
   console.log('\n## Retrait par la croix');
   await aller('?domaine=graphique,gameplay');
   await page.click('[data-retirer][data-valeur="graphique"]');

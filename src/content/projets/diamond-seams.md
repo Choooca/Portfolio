@@ -44,6 +44,9 @@ medias:
 
 # apercu: '/videos/diamond-seams-apercu.mp4'  # à ajouter
 
+# Projets montrés dans la colonne de droite, dans cet ordre.
+lies: ['deferred-forward-rendering']
+
 featured: true
 ordre: 2
 ---

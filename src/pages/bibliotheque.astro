@@ -106,13 +106,16 @@ const options = Object.fromEntries(
       ))
     }
 
-    {/* Aucun résultat du tout : remplace les sections. */}
-    <div class="vide" hidden data-vide-global>
-      <span class="vide__icone">
+    {/* Aucun résultat du tout : remplace les sections.
+        Figma « Screen / Bibliothèque — Aucun résultat » (2014:3618).
+        `role="status"` : le filtrage se fait sans rechargement, l'apparition
+        du message doit donc être annoncée. */}
+    <div class="vide" hidden role="status" data-vide-global>
+      <span class="vide__icone" aria-hidden="true">
         <Icone nom="loupe-vide" />
       </span>
-      <p class="vide__titre">Aucun projet ne correspond à ces filtres.</p>
-      <p class="vide__texte">Essaie de retirer un filtre ou de tout réinitialiser.</p>
+      <p class="vide__titre">{t('bib.vide.titre')}</p>
+      <p class="vide__texte">{t('bib.vide.texte')}</p>
       <div class="vide__actions">
         <button type="button" class="vide__bouton" data-reinitialiser>
           {t('bib.filtres.reinitialiser')}

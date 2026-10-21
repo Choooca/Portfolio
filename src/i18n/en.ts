@@ -44,11 +44,12 @@ const en: Partial<Record<keyof typeof fr, string>> = {
   'bib.filtres.retirer': 'Remove this filter',
   'bib.compteur': '{n} of {total} projects',
   'bib.voirN': 'Show {n} projects',
-  'bib.vide.titre': 'No results',
-  'bib.vide.texte': 'No project matches the active filters.',
+  'bib.vide.titre': 'No project matches these filters.',
+  'bib.vide.texte': 'Try removing a filter, or reset them all.',
 
   // Project page
   'projet.fiche': 'Project sheet',
+  'projet.lies': 'Related projects',
   'projet.contexte': 'Context',
   'projet.role': 'Role',
   'projet.monRole': 'My role',
@@ -72,8 +73,8 @@ const en: Partial<Record<keyof typeof fr, string>> = {
   'media.suivant': 'Next media',
 
   // 404
-  '404.titre': 'Page not found',
-  '404.texte': 'This page does not exist or has been moved.',
+  '404.titre': 'This page does not exist (any more).',
+  '404.texte': 'The link may be broken, or the project has moved.',
   '404.accueil': 'Back to home',
   '404.bibliotheque': 'Browse the library',
 

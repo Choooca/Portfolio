@@ -99,7 +99,8 @@ verifier(
 );
 verifier(
   'toutes les pastilles du projet',
-  await page.$$eval('.pastilles .tag', (e) => e.map((x) => x.textContent.trim())),
+  // Portee a l'en-tete : les cartes « Projets liés » portent les leurs.
+  await page.$$eval('.entete .pastilles .tag', (e) => e.map((x) => x.textContent.trim())),
   ['Graphique', 'Bas niveau', 'Sans moteur', 'C++', 'HLSL'],
 );
 
@@ -528,15 +529,105 @@ verifier(
 );
 await page.setViewportSize({ width: 390, height: 844 });
 await page.waitForTimeout(200);
+// En mobile la colonne n'est plus une boite : ses deux blocs se placent eux-memes.
 verifier(
   'non collee en mobile',
-  await page.$eval('.colonne', (e) => getComputedStyle(e).position),
+  await page.$eval('.colonne__fiche', (e) => getComputedStyle(e).position),
   'static',
 );
 verifier(
   'fiche placee avant l\'article en mobile',
-  await page.$eval('.colonne', (e) => getComputedStyle(e).order),
+  await page.$eval('.colonne__fiche', (e) => getComputedStyle(e).order),
   '-1',
+);
+
+// ====================================================================
+console.log('\n## Projets lies');
+await page.setViewportSize({ width: 1440, height: 900 });
+await aller('deferred-forward-rendering');
+
+verifier(
+  'la section est rendue',
+  await page.$$eval('.lies .carte', (c) => c.length),
+  1,
+);
+verifier(
+  'elle pointe sur le projet cite par `lies`',
+  await page.$eval('.lies .titre a', (a) => new URL(a.href).pathname.replace(/\/$/, '')),
+  '/Portfolio/projets/diamond-seams',
+);
+
+// La carte garde la forme compacte malgre la largeur : image a gauche.
+verifier(
+  'carte compacte en desktop',
+  await page.$eval('.lies .carte', (e) => getComputedStyle(e).flexDirection),
+  'row',
+);
+verifier(
+  'vignette de 88px',
+  await page.$eval('.lies .media', (e) => getComputedStyle(e).width),
+  '88px',
+);
+// Hors bibliotheque il n'y a aucun filtre a piloter.
+verifier(
+  'pastilles non interactives',
+  await page.$$eval('.lies .pastilles button', (b) => b.length),
+  0,
+);
+verifier(
+  'pas d\'apercu au survol',
+  await page.$eval('.lies .carte', (e) => e.hasAttribute('data-apercu')),
+  false,
+);
+
+// Desktop : accrochee sous la fiche, dans la colonne collee.
+verifier(
+  'accrochee sous la fiche, dans la colonne collee',
+  await page.evaluate(() => {
+    const colonne = document.querySelector('.colonne');
+    const fiche = document.querySelector('.fiche');
+    const lies = document.querySelector('.lies');
+    return (
+      colonne.contains(lies) &&
+      getComputedStyle(colonne).position === 'sticky' &&
+      Math.round(lies.getBoundingClientRect().top - fiche.getBoundingClientRect().bottom)
+    );
+  }),
+  32,
+);
+// Garde-fou : la colonne ne doit jamais depasser l'ecran, sinon le bas de la
+// liste resterait hors d'atteinte sous un bloc colle.
+verifier(
+  'la colonne tient dans l\'ecran',
+  await page.evaluate(() => {
+    const c = document.querySelector('.colonne');
+    return c.getBoundingClientRect().height <= window.innerHeight;
+  }),
+  true,
+);
+
+// Mobile : apres l'article, juste avant « Projet suivant ».
+await page.setViewportSize({ width: 390, height: 844 });
+await page.waitForTimeout(200);
+verifier(
+  'ordre mobile : article, puis lies, puis navigation',
+  await page.evaluate(() => {
+    const y = (s) => {
+      const e = document.querySelector(s);
+      return e ? e.getBoundingClientRect().top + window.scrollY : -1;
+    };
+    return y('.article') < y('.lies') && y('.lies') < y('.navigation');
+  }),
+  true,
+);
+
+// Un projet sans `lies` n'affiche pas la section.
+await page.setViewportSize({ width: 1440, height: 900 });
+await aller('diamond-seams');
+verifier(
+  'la section suit le contenu du champ',
+  await page.$$eval('.lies .carte', (c) => c.map((e) => e.querySelector('.titre a').textContent.trim())),
+  ['Deferred & Forward Rendering'],
 );
 
 await ctx.close();

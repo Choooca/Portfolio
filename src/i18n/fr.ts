@@ -38,11 +38,12 @@ export default {
   'bib.filtres.retirer': 'Retirer ce filtre',
   'bib.compteur': '{n} projets sur {total}',
   'bib.voirN': 'Voir {n} projets',
-  'bib.vide.titre': 'Aucun résultat',
-  'bib.vide.texte': 'Aucun projet ne correspond aux filtres actifs.',
+  'bib.vide.titre': 'Aucun projet ne correspond à ces filtres.',
+  'bib.vide.texte': 'Essaie de retirer un filtre ou de tout réinitialiser.',
 
   // Page projet
   'projet.fiche': 'Fiche projet',
+  'projet.lies': 'Projets liés',
   'projet.contexte': 'Contexte',
   'projet.role': 'Rôle',
   'projet.monRole': 'Mon rôle',
@@ -66,8 +67,8 @@ export default {
   'media.suivant': 'Média suivant',
 
   // 404
-  '404.titre': 'Page introuvable',
-  '404.texte': "Cette page n'existe pas ou a été déplacée.",
+  '404.titre': 'Cette page n’existe pas (ou plus).',
+  '404.texte': 'Le lien est peut-être cassé, ou le projet a été déplacé.',
   '404.accueil': "Retour à l'accueil",
   '404.bibliotheque': 'Voir la bibliothèque',
 

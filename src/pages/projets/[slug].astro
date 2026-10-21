@@ -9,6 +9,7 @@ import Carrousel from '../../components/Carrousel.astro';
 import FicheProjet from '../../components/FicheProjet.astro';
 import RoleCallout from '../../components/RoleCallout.astro';
 import NavigationProjet from '../../components/NavigationProjet.astro';
+import ProjetsLies from '../../components/ProjetsLies.astro';
 import Tag from '../../components/Tag.astro';
 import { href } from '../../lib/url';
 import { pick, useTranslations, DEFAULT_LOCALE } from '../../i18n';
@@ -26,6 +27,8 @@ export const getStaticPaths = (async () => {
     return a.data.titre.localeCompare(b.data.titre, 'fr');
   };
 
+  const parSlug = new Map(projets.map((p) => [p.id, p]));
+
   return projets.map((projet) => {
     // Précédent / suivant : voisins dans la MÊME section, en boucle.
     const voisins = projets
@@ -34,18 +37,40 @@ export const getStaticPaths = (async () => {
     const i = voisins.findIndex((p) => p.id === projet.id);
     const n = voisins.length;
 
+    /*
+      Projets liés : choix manuel, dans l'ordre du frontmatter. Zod ne voit
+      qu'un document à la fois, donc c'est ici qu'un slug inexistant est
+      signalé — au build, plutôt que par une carte manquante en ligne.
+    */
+    const lies = projet.data.lies.map((slug) => {
+      if (slug === projet.id) {
+        throw new Error(
+          `${projet.id}.md : « ${slug} » se cite lui-même dans \`lies\`.`,
+        );
+      }
+      const cible = parSlug.get(slug);
+      if (!cible) {
+        throw new Error(
+          `${projet.id}.md : \`lies\` cite « ${slug} », qui n'existe pas. ` +
+            `Projets disponibles : ${[...parSlug.keys()].join(', ')}.`,
+        );
+      }
+      return cible;
+    });
+
     return {
       params: { slug: projet.id },
       props: {
         projet,
         precedent: voisins[(i - 1 + n) % n]!,
         suivant: voisins[(i + 1) % n]!,
+        lies,
       },
     };
   });
 }) satisfies GetStaticPaths;
 
-const { projet, precedent, suivant } = Astro.props;
+const { projet, precedent, suivant, lies } = Astro.props;
 const locale = DEFAULT_LOCALE;
 const t = useTranslations(locale);
 const d = projet.data;
@@ -108,7 +133,17 @@ const afficherNavigation = precedent.id !== projet.id || suivant.id !== projet.i
     </article>
 
     <div class="colonne">
-      <FicheProjet projet={projet} locale={locale} />
+      <div class="colonne__fiche">
+        <FicheProjet projet={projet} locale={locale} />
+      </div>
+
+      {
+        lies.length > 0 && (
+          <div class="colonne__lies">
+            <ProjetsLies projets={lies} locale={locale} />
+          </div>
+        )
+      }
     </div>
   </div>
 
@@ -168,7 +203,10 @@ const afficherNavigation = precedent.id !== projet.id || suivant.id !== projet.i
   }
 
   /* ---- Corps ----
-     Mobile : la fiche passe AVANT l'article, juste sous le carrousel. */
+     Mobile : la colonne de droite n'est pas une boîte — `display: contents`
+     rend ses deux blocs enfants directs du corps, pour qu'ils se placent
+     séparément : la fiche AVANT l'article, juste sous le carrousel, et les
+     projets liés APRÈS, juste avant la navigation de bas de page. */
   .corps {
     display: flex;
     flex-direction: column;
@@ -177,7 +215,15 @@ const afficherNavigation = precedent.id !== projet.id || suivant.id !== projet.i
   }
 
   .colonne {
+    display: contents;
+  }
+
+  .colonne__fiche {
     order: -1;
+  }
+
+  .colonne__lies {
+    order: 1;
   }
 
   .article {
@@ -217,11 +263,36 @@ const afficherNavigation = precedent.id !== projet.id || suivant.id !== projet.i
       padding-block: 96px;
     }
 
+    /*
+      La colonne redevient une boîte : fiche et projets liés y sont collés
+      ensemble sous la navigation, comme dans la maquette.
+
+      Le `max-height` est un garde-fou, pas une décoration : fiche et liste
+      mises bout à bout peuvent dépasser la hauteur d'un écran, et le bas de
+      la liste serait alors resté hors d'atteinte sous un bloc collé. Au-delà,
+      la colonne défile d'elle-même ; tant qu'elle tient, rien ne défile et
+      aucune barre n'apparaît.
+
+      Le creux de 8px, repris en marge négative, laisse la place au contour de
+      focus (2px à 4px du bord) que le défilement rognerait sinon ; `top` le
+      compense pour que la colonne reste posée au même endroit.
+    */
     .colonne {
-      order: 0;
-      /* Collée sous la navigation, en desktop seulement. */
+      display: flex;
+      flex-direction: column;
+      gap: 32px;
       position: sticky;
-      top: calc(var(--nav-height) + 24px);
+      top: calc(var(--nav-height) + 16px);
+      max-height: calc(100dvh - var(--nav-height) - 48px);
+      padding: 8px;
+      margin: -8px;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+    }
+
+    .colonne__fiche,
+    .colonne__lies {
+      order: 0;
     }
 
     .article {

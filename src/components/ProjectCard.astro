@@ -5,6 +5,10 @@
 // Un seul balisage pour les deux : la carte est compacte sous 640px (liste
 // mobile) et complete au-dessus (grille). Rendre les deux variantes puis en
 // masquer une dupliquerait les liens dans le DOM.
+//
+// La prop `compact` force la forme compacte a toutes les largeurs. Elle sert
+// a la liste « Projets liés » de la page projet, qui vit dans une colonne de
+// 520px ou la carte complete n'aurait pas sa place.
 import { Image } from 'astro:assets';
 import type { CollectionEntry } from 'astro:content';
 import Tag from './Tag.astro';
@@ -16,13 +20,19 @@ import { pick, useTranslations, type Locale } from '../i18n';
 interface Props {
   projet: CollectionEntry<'projets'>;
   locale?: Locale;
+  /** Force la forme compacte quelle que soit la largeur. */
+  compact?: boolean;
 }
 
-const { projet, locale = 'fr' } = Astro.props;
+const { projet, locale = 'fr', compact = false } = Astro.props;
 const t = useTranslations(locale);
 const d = projet.data;
 
 const genre = pick(d.genre, d.genre_en, locale);
+
+// Pas d'aperçu au survol sur la forme compacte : la vignette y fait 88px de
+// large, et elle sert dans une colonne qu'on survole en lisant autre chose.
+const apercu = compact ? undefined : d.apercu;
 
 // Le premier media sert de vignette ; une video affiche son poster.
 const premier = d.medias[0]!;
@@ -52,9 +62,9 @@ const filtres = {
 ---
 
 <article
-  class="carte"
+  class:list={['carte', { 'carte--compact': compact }]}
   data-carte
-  data-apercu={d.apercu}
+  data-apercu={apercu}
   data-domaine={filtres.domaine}
   data-moteur={filtres.moteur}
   data-langage={filtres.langage}
@@ -67,7 +77,7 @@ const filtres = {
           src={vignette}
           alt={legende}
           widths={[88, 402, 804]}
-          sizes="(max-width: 639px) 88px, 402px"
+          sizes={compact ? '88px' : '(max-width: 639px) 88px, 402px'}
         />
       ) : (
         <span class="media__vide">
@@ -81,7 +91,7 @@ const filtres = {
       Le fichier n'est telecharge qu'au premier survol (voir le script).
     */}
     {
-      d.apercu && (
+      apercu && (
         <>
           <span class="badge" hidden data-apercu-badge>
             <Icone nom="lecture" />
@@ -112,8 +122,10 @@ const filtres = {
       {
         pastilles.map((p) => (
           <li>
-            {/* Cliquable : ajoute le filtre, ou le retire s'il est deja actif. */}
-            <Tag kind={p.kind} label={p.label} />
+            {/* Cliquable : ajoute le filtre, ou le retire s'il est deja actif.
+                Hors bibliotheque (forme compacte de la page projet) il n'y a
+                aucun filtre a piloter : la pastille y est un simple libelle. */}
+            <Tag kind={p.kind} label={p.label} interactif={!compact} />
           </li>
         ))
       }
@@ -228,11 +240,31 @@ const filtres = {
     }
   }
 
+  /* Meme raison sur la forme compacte, a toutes les largeurs : ses pastilles
+     sont de simples libelles, elles ne doivent pas intercepter le clic qui
+     ouvre le projet. */
+  .carte--compact .pastilles {
+    pointer-events: none;
+  }
+
+  /* Ombre plus courte sur la forme compacte : elle vit dans une colonne
+     etroite qui peut defiler, ou les 64px de flou de --ombre-carte seraient
+     rognes net sur les bords. */
+  @media (hover: hover) {
+    .carte--compact:hover {
+      box-shadow: var(--ombre-flottante);
+    }
+  }
+
   /* ====================================================================
      Tablette et desktop (>= 640px) : carte complete, image en haut.
+
+     Chaque regle exclut `.carte--compact` : la forme compacte est l'etat de
+     base, et c'est ce bloc qui la remplace. Sans cette exclusion, une carte
+     compacte posee sur un grand ecran reprendrait la forme complete.
      ==================================================================== */
   @media (min-width: 640px) {
-    .carte {
+    .carte:not(.carte--compact) {
       flex-direction: column;
       gap: 16px;
       align-items: stretch;
@@ -240,42 +272,39 @@ const filtres = {
       border-radius: 20px;
     }
 
-    .media {
+    .carte:not(.carte--compact) .media {
       width: 100%;
       height: 234px;
       border-radius: 14px;
     }
 
-    .media__vide {
+    .carte:not(.carte--compact) .media__vide {
       width: 44px;
       height: 44px;
     }
 
     /* Le corps occupe la hauteur restante et pousse les pastilles en bas,
        pour que les cartes d'une meme ligne s'alignent. */
-    .corps {
+    .carte:not(.carte--compact) .corps {
       flex: 1;
       gap: 16px;
     }
 
-    .pastilles {
+    .carte:not(.carte--compact) .pastilles {
       margin-block-start: auto;
+      padding-block-start: 0;
     }
 
-    .info {
+    .carte:not(.carte--compact) .info {
       gap: 6px;
     }
 
-    .titre {
+    .carte:not(.carte--compact) .titre {
       font-size: 20px;
     }
 
-    .genre {
+    .carte:not(.carte--compact) .genre {
       font-size: 15px;
-    }
-
-    .pastilles {
-      padding-block-start: 0;
     }
   }
 
