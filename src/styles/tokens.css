@@ -133,6 +133,24 @@
 }
 
 /* ==========================================================================
+   Ombres portees
+
+   Une ombre reglee pour un fond sombre devient une tache grise sur un fond
+   clair : la maquette claire montre une ombre nettement plus douce. D'ou une
+   valeur par theme plutot qu'une seule.
+   ========================================================================== */
+
+:root {
+  --ombre-carte: 0 24px 64px rgb(0 0 0 / 0.5);
+  --ombre-flottante: 0 8px 24px rgb(0 0 0 / 0.4);
+}
+
+[data-theme='light'] {
+  --ombre-carte: 0 24px 64px rgb(20 18 44 / 0.12);
+  --ombre-flottante: 0 8px 24px rgb(20 18 44 / 0.1);
+}
+
+/* ==========================================================================
    Zones qui restent sombres dans les deux themes
    (banniere demoreel, blocs de code) : on y reapplique les valeurs sombres.
    ========================================================================== */

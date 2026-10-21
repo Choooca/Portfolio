@@ -14,7 +14,8 @@
     "captures": "node scripts/captures.mjs",
     "test:filtres": "node scripts/test-filtres.mjs",
     "test:projet": "node scripts/test-projet.mjs",
-    "test": "npm run test:filtres && npm run test:projet"
+    "test": "npm run test:filtres && npm run test:projet && npm run test:accueil",
+    "test:accueil": "node scripts/test-accueil.mjs"
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.10",

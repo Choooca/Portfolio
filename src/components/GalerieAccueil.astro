@@ -1,0 +1,408 @@
+---
+// Carrousel des projets mis en avant — Figma « Gallery / Projects » (51:30).
+//
+// Meme mecanique que le carrousel de la page projet (src/lib/carrousel.ts) :
+// piste a accrochage, boucle par clones, fleches, diapos laterales cliquables,
+// fleches du clavier.
+//
+// Desktop : carte large au centre, voisines estompees qui depassent.
+// En dessous : rangee de cartes de 300px qu'on fait glisser.
+import { Image } from 'astro:assets';
+import ProjectCard from './ProjectCard.astro';
+import Tag from './Tag.astro';
+import Icone from './Icone.astro';
+import { href } from '../lib/url';
+import { pick, useTranslations, type Locale } from '../i18n';
+import type { CollectionEntry } from 'astro:content';
+
+interface Props {
+  projets: CollectionEntry<'projets'>[];
+  locale?: Locale;
+}
+
+const { projets, locale = 'fr' } = Astro.props;
+const t = useTranslations(locale);
+
+const cartes = projets.map((projet) => {
+  const d = projet.data;
+  const premier = d.medias[0]!;
+  return {
+    projet,
+    titre: d.titre,
+    lien: href(`/projets/${projet.id}`),
+    pitch: pick(d.pitch, d.pitch_en, locale),
+    vignette: premier.type === 'image' ? premier.src : premier.poster,
+    legende: pick(premier.legende, premier.legende_en, locale),
+    technos: d.technos,
+    pastilles: [
+      ...d.domaine.map((label) => ({ kind: 'domaine' as const, label })),
+      ...(d.moteur ? [{ kind: 'moteur' as const, label: d.moteur }] : []),
+      ...d.langage.map((label) => ({ kind: 'langage' as const, label })),
+    ],
+  };
+});
+---
+
+<div class="galerie" data-galerie>
+  {/* ---- Piste : desktop ---- */}
+  <div class="scene">
+    <div class="piste" data-galerie-piste>
+      {
+        cartes.map((carte, i) => (
+          <article class="carte" data-diapo={i}>
+            <div class="carte__media">
+              {carte.vignette ? (
+                <Image
+                  src={carte.vignette}
+                  alt={carte.legende}
+                  widths={[540, 1080]}
+                  sizes="540px"
+                  loading={i === 0 ? 'eager' : 'lazy'}
+                />
+              ) : null}
+            </div>
+
+            <div class="carte__contenu">
+              <h3 class="carte__titre">
+                <a href={carte.lien}>{carte.titre}</a>
+              </h3>
+
+              <ul class="carte__pastilles" role="list">
+                {carte.pastilles.map((p) => (
+                  <li>
+                    <Tag kind={p.kind} label={p.label} interactif={false} />
+                  </li>
+                ))}
+              </ul>
+
+              <p class="carte__pitch">{carte.pitch}</p>
+
+              <div class="carte__libs">
+                <p class="carte__libs-titre">{t('accueil.librairies').toUpperCase()}</p>
+                <p class="carte__libs-liste">{carte.technos.join(', ')}</p>
+              </div>
+            </div>
+          </article>
+        ))
+      }
+    </div>
+
+    {
+      cartes.length > 1 && (
+        <>
+          <button type="button" class="fleche fleche--prec" data-galerie-prec>
+            <Icone nom="chevron-gauche" />
+            <span class="visually-hidden">Projet précédent</span>
+          </button>
+          <button type="button" class="fleche fleche--suiv" data-galerie-suiv>
+            <Icone nom="chevron-droit" />
+            <span class="visually-hidden">Projet suivant</span>
+          </button>
+        </>
+      )
+    }
+  </div>
+
+  {/* ---- Points : repere de position ---- */}
+  {
+    cartes.length > 1 && (
+      <div class="points" role="tablist" aria-label="Choisir un projet">
+        {cartes.map((carte, i) => (
+          <button
+            type="button"
+            class="point"
+            role="tab"
+            aria-selected={i === 0 ? 'true' : 'false'}
+            data-galerie-point={i}
+          >
+            <span class="visually-hidden">{carte.titre}</span>
+          </button>
+        ))}
+      </div>
+    )
+  }
+
+  {/* ---- Rangee glissante : tablette et mobile ---- */}
+  <ul class="rangee" role="list">
+    {
+      cartes.map((carte) => (
+        <li>
+          <ProjectCard projet={carte.projet} locale={locale} />
+        </li>
+      ))
+    }
+  </ul>
+</div>
+
+<style>
+  /* ====================================================================
+     Mobile et tablette : une rangee de cartes de 300px qu'on fait glisser.
+     ==================================================================== */
+  .scene,
+  .points {
+    display: none;
+  }
+
+  .rangee {
+    display: flex;
+    gap: 16px;
+    margin: 0;
+    padding-inline: var(--gutter);
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+    overscroll-behavior-x: contain;
+  }
+
+  .rangee::-webkit-scrollbar {
+    display: none;
+  }
+
+  .rangee > li {
+    flex: 0 0 300px;
+    scroll-snap-align: center;
+  }
+
+  /* ====================================================================
+     Desktop : piste a accrochage, carte centrale large.
+     ==================================================================== */
+  @media (min-width: 1024px) {
+    .rangee {
+      display: none;
+    }
+
+    .scene {
+      position: relative;
+      display: block;
+      /* Compense la respiration ajoutee a la piste pour l'ombre. */
+      margin-block: -72px;
+    }
+
+    .piste {
+      display: flex;
+      gap: 40px;
+      /* Centre la carte active : moitie de l'ecran moins sa demi-largeur. */
+      padding-inline: calc(50% - 497px);
+      /*
+        `overflow-x: auto` force aussi `overflow-y` a `auto` : sans cette
+        respiration verticale, l'ombre de la carte active serait rognee net
+        en haut et en bas.
+      */
+      padding-block: 72px;
+      overflow-x: auto;
+      scroll-snap-type: x mandatory;
+      scrollbar-width: none;
+      overscroll-behavior-x: contain;
+    }
+
+    .piste::-webkit-scrollbar {
+      display: none;
+    }
+
+    /* Les clones sont des copies : ils portent la meme classe. */
+    .carte {
+      position: relative;
+      flex: 0 0 994px;
+      display: flex;
+      gap: 36px;
+      align-items: flex-start;
+      padding: 28px;
+      border: 1px solid var(--border-default);
+      border-radius: 32px;
+      background-color: var(--surface-raised);
+      opacity: 0.6;
+      scroll-snap-align: center;
+      cursor: pointer;
+      transition: opacity 240ms ease, border-color 240ms ease, box-shadow 240ms ease;
+    }
+
+    /*
+      `z-index` indispensable : sans lui, les cartes qui suivent dans le
+      balisage se dessinent par-dessus l'ombre et celles qui precedent en
+      dessous — l'ombre paraissait alors coupee d'un seul cote.
+    */
+    .carte[data-actif] {
+      z-index: 1;
+      border-color: var(--accent-fill);
+      opacity: 1;
+      box-shadow: var(--ombre-carte);
+      cursor: default;
+    }
+
+    .carte:not([data-actif]):hover {
+      opacity: 0.8;
+    }
+
+    .carte__media {
+      flex-shrink: 0;
+      width: 540px;
+      height: 460px;
+      overflow: hidden;
+      border-radius: 20px;
+      background-color: var(--media-placeholder);
+    }
+
+    .carte__media :global(img) {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .carte__contenu {
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+      width: 360px;
+    }
+
+    .carte__titre {
+      font-weight: var(--fw-semibold);
+      font-size: 28px;
+      line-height: 1.2;
+      color: var(--text-primary);
+    }
+
+    .carte__titre a {
+      text-decoration: none;
+    }
+
+    /* Seule la carte active ouvre le projet ; les autres amenent a elles. */
+    .carte[data-actif] .carte__titre a::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+    }
+
+    .carte__pastilles {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 0;
+    }
+
+    .carte__pitch {
+      font-weight: var(--fw-light);
+      font-size: 16px;
+      line-height: 1.55;
+      color: var(--text-secondary);
+    }
+
+    .carte__libs {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-block-start: auto;
+    }
+
+    .carte__libs-titre {
+      font-weight: var(--fw-medium);
+      font-size: 12px;
+      letter-spacing: 1.8px;
+      color: var(--text-subtle);
+    }
+
+    .carte__libs-liste {
+      font-weight: var(--fw-light);
+      font-size: 14px;
+      line-height: 1.5;
+      color: var(--text-muted);
+    }
+
+    /* ---- Fleches ---- */
+    .fleche {
+      position: absolute;
+      top: 50%;
+      z-index: 2;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 56px;
+      height: 56px;
+      border: 1px solid var(--border-default);
+      border-radius: 28px;
+      background-color: var(--surface-raised);
+      color: var(--text-primary);
+      box-shadow: var(--ombre-flottante);
+      transform: translateY(-50%);
+    }
+
+    .fleche--prec {
+      left: calc(50% - 525px);
+    }
+
+    .fleche--suiv {
+      right: calc(50% - 525px);
+    }
+
+    .fleche:hover {
+      background-color: var(--surface-default);
+    }
+
+    /* ---- Points ---- */
+    .points {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      gap: 4px;
+      justify-content: center;
+      padding-block-start: 24px;
+    }
+
+    .point {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 24px;
+      height: 24px;
+    }
+
+    .point::before {
+      content: '';
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background-color: var(--text-subtle);
+      opacity: 0.4;
+      transition: opacity 140ms ease, background-color 140ms ease, width 140ms ease;
+    }
+
+    .point[aria-selected='true']::before {
+      width: 20px;
+      background-color: var(--accent-fill);
+      opacity: 1;
+    }
+  }
+</style>
+
+<script>
+  import { creerCarrousel } from '../lib/carrousel';
+
+  const piste = document.querySelector<HTMLElement>('[data-galerie-piste]');
+
+  if (piste) {
+    const points = Array.from(
+      document.querySelectorAll<HTMLElement>('[data-galerie-point]'),
+    );
+
+    const carrousel = creerCarrousel({
+      piste,
+      zonesClavier: [document.querySelector('.points')],
+      surChangement(index) {
+        points.forEach((p, i) =>
+          p.setAttribute('aria-selected', i === index ? 'true' : 'false'),
+        );
+      },
+    });
+
+    if (carrousel) {
+      document
+        .querySelector('[data-galerie-prec]')
+        ?.addEventListener('click', () => carrousel.decaler(-1));
+      document
+        .querySelector('[data-galerie-suiv]')
+        ?.addEventListener('click', () => carrousel.decaler(1));
+      points.forEach((p, i) => p.addEventListener('click', () => carrousel.aller(i)));
+    }
+  }
+</script>

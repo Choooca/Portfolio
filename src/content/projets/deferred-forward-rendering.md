@@ -35,7 +35,7 @@ medias:
 
 # apercu: '/videos/deferred-forward-rendering-apercu.mp4'  # à ajouter
 
-featured: false
+featured: true
 ordre: 1
 ---
 

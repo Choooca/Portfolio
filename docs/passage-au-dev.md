@@ -17,8 +17,7 @@ Trois gabarits de page couvrent tout le site : Accueil, Bibliothèque, Projet. C
 
 | Page | Desktop (1920) | Mobile (390) | Notes |
 | --- | --- | --- | --- |
-| Accueil — écran d'entrée | Screen / Accueil | Mobile / Accueil | Plein écran, on fait défiler pour entrer |
-| Accueil — contenu | Screen / Accueil — Projets | Mobile / Accueil — Projets | Bannière demoreel, projets mis en avant, À propos, Parcours |
+| Accueil | Screen / Accueil | Mobile / Accueil | Bannière, projets mis en avant, À propos (avec le demoreel), Parcours |
 | Bibliothèque | Screen / Bibliothèque | Mobile / Bibliothèque | Cartes en grille (desktop), liste compacte (mobile) |
 | Bibliothèque — filtres | Screen / Bibliothèque — Filtre actif (C++) | Mobile / Bibliothèque — Filtres | Menu déroulant (desktop), panneau du bas (mobile) |
 | Bibliothèque — aucun résultat | Screen / Bibliothèque — Aucun résultat | — | Même message en mobile, centré |
@@ -81,7 +80,7 @@ Principe : rien ne se charge avant d'être utile, pour que la Bibliothèque rest
 
 - **Aperçu au survol (desktop)** : la vidéo `apercu` remplace l'image de la carte, muette, en boucle, avec le badge « Aperçu » et la barre de progression. Elle ne se télécharge qu'au premier survol. Au départ de la souris, retour à l'image.
 - **Mobile et tactile** : pas d'aperçu au survol. La carte mène directement à la page projet.
-- **Bannière de l'accueil (demoreel)** : vidéo muette, en boucle, lancée automatiquement. Une image fixe s'affiche tant qu'elle charge.
+- **Bannière de l'accueil** : image de fond fixe, avec les dégradés de la maquette. *(Maquette modifiée le 18/10/2026 : l'écran d'entrée a été retiré — la page commence par la bannière — et le demoreel est devenu une vidéo dans la section « À propos », lancée au clic avec le son, et non plus une vidéo de fond muette.)*
 - **Carrousel de la page projet** : les images s'affichent directement. Une vidéo montre sa première image avec le bouton lecture, et ne se lance qu'au clic, avec le son. Changer de média met en pause la vidéo en cours.
 - **Navigation du carrousel** : flèches et vignettes (desktop), glissement au doigt et points (mobile), flèches du clavier.
 - **Accessibilité** : si le visiteur a activé « réduire les animations » dans son système, l'aperçu au survol et la lecture automatique de la bannière sont désactivés.
@@ -109,7 +108,9 @@ Les 22 variables Figma de la collection « Couleurs » deviennent 22 variables C
 - **Par défaut** : le thème du système du visiteur (`prefers-color-scheme`).
 - **Bascule** : le bouton soleil/lune de la navigation (et le réglage « Thème » du menu mobile). Le choix est mémorisé dans le navigateur et prime sur le système.
 - **Sans flash** : un petit script dans le `<head>` applique le thème avant l'affichage de la page.
-- **Restent sombres dans les deux thèmes** : la bannière demoreel et les blocs de code.
+- **Reste sombre dans les deux thèmes** : seulement le voile gauche de la bannière, sur lequel se pose le titre — qui garde donc ses couleurs claires. Le fondu du bas, lui, prend la couleur de la page pour s'y raccorder sans rupture. *(Relevé le 21/10/2026 sur `Screen / Accueil — Clair`.)*
+- **Ombres portées** : réglées par thème (`--ombre-carte`, `--ombre-flottante` dans `tokens.css`). Une ombre calibrée pour un fond sombre devient une tache grise sur un fond clair.
+- **Blocs de code** : ils suivent le thème, habillage comme coloration. *(Décidé au dev le 18/10/2026 : un bloc sombre au milieu d'une page claire tranchait trop. Les couleurs claires reprennent les mêmes tokens : mots-clés `tag/moteur-text`, fonctions `tag/langage-text`, nombres `accent/text`, chaînes `tag/domaine-text`.)*
 - **Transparences** : certaines couleurs sont utilisées avec une opacité (séparateurs à 7 %, fond de « Mon rôle » à 5 %, bouton CV à 8 %). Les reprendre telles quelles depuis Figma.
 
 | Variable | Sombre | Clair |
@@ -172,7 +173,8 @@ Les blocs de code des pages projet s'écrivent directement en Markdown (trois ba
 À remplir par Paul, au fil du dev. Le site peut tourner avec les textes provisoires en attendant.
 
 - [ ] Images et vidéos de chaque projet (carrousel, vignette, aperçu de 5–10 s)
-- [ ] Vidéo du demoreel pour la bannière de l'accueil
+- [ ] Vidéo du demoreel pour la section « À propos » (public/videos/demoreel.mp4) et son image d'affiche
+- [ ] Image de fond de la bannière de l'accueil
 - [ ] Durée, taille d'équipe, rôle et contribution de chaque projet
 - [ ] Genre d'Invokyr
 - [ ] Dates et entreprise du poste de Développeur R&D VR (Parcours)

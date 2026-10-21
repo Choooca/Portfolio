@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080">
+  <!-- Placeholder temporaire. A remplacer par Paul : image d'accueil et
+       video du demoreel (voir « Reste a faire » de passage-au-dev.md). -->
+  <rect width="1920" height="1080" fill="#14122c"/>
+  <g fill="none" stroke="#2f2b57" stroke-width="10" stroke-linejoin="round" stroke-linecap="round">
+    <rect x="800" y="440" width="320" height="220" rx="18"/>
+    <circle cx="880" cy="518" r="28"/>
+    <path d="M814 648 l104 -94 80 66 66 -52 64 80"/>
+  </g>
+  <text x="960" y="760" text-anchor="middle" font-family="monospace" font-size="38" fill="#2f2b57" letter-spacing="6">VISUEL A FOURNIR</text>
+</svg>

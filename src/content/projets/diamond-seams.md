@@ -44,7 +44,7 @@ medias:
 
 # apercu: '/videos/diamond-seams-apercu.mp4'  # à ajouter
 
-featured: false
+featured: true
 ordre: 2
 ---
 

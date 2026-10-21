@@ -255,7 +255,7 @@ const diapos = medias.map((media, i) => ({
       border-radius: 28px;
       background-color: var(--surface-raised);
       color: var(--text-primary);
-      box-shadow: 0 8px 24px rgb(0 0 0 / 0.4);
+      box-shadow: var(--ombre-flottante);
       transform: translateY(-50%);
     }
 
@@ -338,353 +338,52 @@ const diapos = medias.map((media, i) => ({
 </style>
 
 <script>
-  const carrousel = document.querySelector<HTMLElement>('[data-carrousel]');
+  import { creerCarrousel } from '../lib/carrousel';
+
   const piste = document.querySelector<HTMLElement>('[data-piste]');
 
-  if (carrousel && piste) {
-    // Capture dans des constantes : TypeScript ne garde pas l'affinement du
-    // `if` a l'interieur des fonctions declarees en dessous.
-    const zone = piste;
-    const diapos = Array.from(zone.querySelectorAll<HTMLElement>('[data-diapo]'));
+  if (piste) {
     const vignettes = Array.from(
       document.querySelectorAll<HTMLElement>('[data-vignette]'),
     );
     const points = Array.from(document.querySelectorAll<HTMLElement>('[data-point]'));
     const champCourant = document.querySelector<HTMLElement>('[data-carrousel-courant]');
     const champLegende = document.querySelector<HTMLElement>('[data-carrousel-legende]');
-    const legendes = diapos.map(
-      (d) => d.getAttribute('aria-label')?.split(' — ').slice(1).join(' — ') ?? '',
-    );
+    const legendes = Array.from(
+      piste.querySelectorAll<HTMLElement>('[data-diapo]'),
+    ).map((d) => d.getAttribute('aria-label')?.split(' — ').slice(1).join(' — ') ?? '');
 
-    const n = diapos.length;
-
-    /**
-     * Carrousel circulaire : on clone le dernier media avant le premier et le
-     * premier apres le dernier. Sur la premiere diapo, c'est donc la derniere
-     * qui depasse a gauche, et « Precedent » glisse vers la gauche au lieu de
-     * sauter a l'autre bout. Une fois arrive sur un clone, on se replace
-     * silencieusement sur le vrai media equivalent.
-     *
-     * Les clones sont retires de l'arbre d'accessibilite et du parcours de
-     * tabulation : ils ne doivent exister que visuellement.
-     */
-    if (n > 1) {
-      for (const [source, ou] of [
-        [diapos[n - 1]!, 'afterbegin'],
-        [diapos[0]!, 'beforeend'],
-      ] as const) {
-        const clone = source.cloneNode(true) as HTMLElement;
-        clone.removeAttribute('data-diapo');
-        clone.removeAttribute('data-actif');
-        clone.dataset.clone = '';
-
-        // Masqué aux lecteurs d'écran — le média est déjà annoncé à sa vraie
-        // place — mais surtout PAS `inert` : celui-ci bloque aussi les clics,
-        // et la diapo doit pouvoir amener à elle comme les autres.
-        clone.setAttribute('aria-hidden', 'true');
-        for (const cible of clone.querySelectorAll<HTMLElement>(
-          'button, a, [tabindex]',
-        )) {
-          cible.setAttribute('tabindex', '-1');
-        }
-
-        zone.insertAdjacentElement(ou, clone);
-      }
-    }
-
-    /** Toutes les cellules de la piste, clones compris. */
-    const cellules = Array.from(zone.children) as HTMLElement[];
-
-    /**
-     * Position dans la piste : 0 = clone de fin, 1..n = vrais media,
-     * n+1 = clone de debut.
-     *
-     * `position` suit ce qui est reellement affiche (mis a jour par
-     * l'observateur). `vise` est la destination demandee : elle est mise a
-     * jour tout de suite au clic, sinon des clics rapides se calculeraient
-     * tous depuis la meme position de depart et des pas seraient perdus.
-     */
-    let position = n > 1 ? 1 : 0;
-    let vise = position;
-    let courant = 0;
-    let pret = false;
-
-    /**
-     * Vrai pendant un deplacement commande (fleche, vignette, clic).
-     *
-     * Indispensable : un `scrollTo` instantane emet lui aussi un `scrollend`,
-     * aussitot. Sans ce drapeau, la teleportation prealable de `decaler()`
-     * declenchait le recollage, qui voyait le clone et renvoyait au point de
-     * depart — le carrousel ne bougeait plus.
-     */
-    let pilote = false;
-    let minuteurPilote: number;
-
-    function programmer() {
-      pilote = true;
-      clearTimeout(minuteurPilote);
-      // Filet : si l'animation n'arrive jamais a destination, on rend la main.
-      minuteurPilote = window.setTimeout(() => {
-        pilote = false;
-        recoller();
-      }, 800);
-    }
-
-    /**
-     * Les images du carrousel sont en chargement paresseux. Celle vers
-     * laquelle on va doit deja etre la, sinon on voit un blanc au moment du
-     * changement. On passe en chargement immediat la cellule demandee et ses
-     * deux voisines.
-     */
-    function precharger(p: number) {
-      for (const voisin of [p - 1, p, p + 1]) {
-        for (const img of cellules[voisin]?.querySelectorAll('img') ?? []) {
-          img.loading = 'eager';
-        }
-      }
-    }
-
-    const reelDe = (p: number) => {
-      if (n <= 1) return 0;
-      if (p === 0) return n - 1;
-      if (p === n + 1) return 0;
-      return p - 1;
-    };
-
-    /** Cellule dont le centre est le plus proche du defilement actuel. */
-    function celluleCentree() {
-      let meilleure = 0;
-      let ecart = Infinity;
-      cellules.forEach((c, i) => {
-        const cible = c.offsetLeft - (zone.clientWidth - c.clientWidth) / 2;
-        const d = Math.abs(cible - zone.scrollLeft);
-        if (d < ecart) {
-          ecart = d;
-          meilleure = i;
-        }
-      });
-      return meilleure;
-    }
-
-    function marquer(index: number) {
-      courant = Math.max(0, Math.min(index, diapos.length - 1));
-
-      diapos.forEach((d, i) => d.toggleAttribute('data-actif', i === courant));
-      vignettes.forEach((v, i) =>
-        v.setAttribute('aria-selected', i === courant ? 'true' : 'false'),
-      );
-      points.forEach((p, i) => {
-        p.toggleAttribute('data-actif', i === courant);
-        p.setAttribute('aria-selected', i === courant ? 'true' : 'false');
-      });
-
-      if (champCourant) champCourant.textContent = String(courant + 1);
-      if (champLegende) champLegende.textContent = legendes[courant] ?? '';
-
-      // Prévient Media.astro, qui met en pause la vidéo en cours.
-      document.dispatchEvent(new CustomEvent('carrousel:changement'));
-    }
-
-    /** Centre la cellule a la position donnee dans la piste. */
-    function allerPosition(p: number, instantane = false) {
-      const cible = cellules[p];
-      if (!cible) return;
-      zone.scrollTo({
-        left: cible.offsetLeft - (zone.clientWidth - cible.clientWidth) / 2,
-        behavior: instantane ? 'auto' : 'smooth',
-      });
-    }
-
-    /** Va directement a un media (vignettes et points) : pas de boucle ici. */
-    function aller(index: number) {
-      const p = n > 1 ? index + 1 : index;
-      vise = p;
-      programmer();
-      precharger(p);
-      allerPosition(p);
-    }
-
-    /**
-     * Avance ou recule d'un cran, en bouclant.
-     *
-     * Le replacement se fait AVANT l'animation, pas apres : arrive a un bord,
-     * on se teleporte d'abord sur le clone equivalent — qui montre exactement
-     * la meme image, donc le saut est invisible — puis on glisse d'une seule
-     * case. Replacer apres coup faisait courir le saut instantane contre le
-     * defilement fluide encore en cours.
-     */
-    function decaler(pas: number) {
-      if (n <= 1) return;
-
-      let depart = vise;
-      if (pas < 0 && depart === 1) depart = n + 1;
-      else if (pas > 0 && depart === n) depart = 0;
-
-      if (depart !== vise) {
-        position = depart;
-        allerPosition(depart, true);
-      }
-
-      vise = depart + pas;
-      programmer();
-      precharger(vise);
-      allerPosition(vise);
-    }
-
-    /**
-     * Filet de securite pour le glissement au doigt, qui peut s'arreter sur
-     * un clone sans passer par `decaler()`. On se fie a la position de
-     * defilement reelle, pas a `position` : celle-ci peut etre en retard
-     * pendant une animation, et agir dessus annulait le deplacement en cours.
-     */
-    function recoller() {
-      if (n <= 1 || !pret) return;
-      const p = celluleCentree();
-
-      // Pendant un deplacement commande, on ignore les fins de defilement
-      // intermediaires et on ne rend la main qu'une fois arrive.
-      if (pilote) {
-        if (p !== vise) return;
-        pilote = false;
-        clearTimeout(minuteurPilote);
-      }
-
-      // La fin de defilement fait autorite. L'observateur ne previent qu'au
-      // franchissement d'un seuil : des allers-retours rapides pouvaient ne
-      // jamais en franchir, et l'etat affiche restait sur l'ancien media.
-      vise = p;
-      position = p;
-      const reel = reelDe(p);
-      if (reel !== courant) marquer(reel);
-
-      if (p !== 0 && p !== n + 1) return;
-      vise = p === 0 ? n : 1;
-      position = vise;
-      precharger(vise);
-      allerPosition(vise, true);
-    }
-
-    document
-      .querySelector('[data-carrousel-prec]')
-      ?.addEventListener('click', () => decaler(-1));
-    document
-      .querySelector('[data-carrousel-suiv]')
-      ?.addEventListener('click', () => decaler(1));
-
-    vignettes.forEach((v, i) => v.addEventListener('click', () => aller(i)));
-    points.forEach((p, i) => p.addEventListener('click', () => aller(i)));
-
-    /**
-     * Les diapos qui dépassent sur les côtés amènent à elles au clic, comme
-     * les flèches. `stopPropagation` empêche le bouton lecture d'une vidéo
-     * latérale de se déclencher : on veut l'amener au centre d'abord.
-     */
-    zone.addEventListener('click', (event) => {
-      const cellule = (event.target as HTMLElement).closest<HTMLElement>(
-        '[data-diapo], [data-clone]',
-      );
-      if (!cellule) return;
-      const p = cellules.indexOf(cellule);
-      const estClone = cellule.hasAttribute('data-clone');
-      if (p < 0 || (!estClone && p === vise)) return;
-      event.preventDefault();
-      event.stopPropagation();
-
-      // Cliquer un clone revient a faire un pas dans sa direction : on passe
-      // par `decaler()` pour profiter de la teleportation prealable.
-      if (estClone) decaler(p === 0 ? -1 : 1);
-      else {
-        vise = p;
-        programmer();
-        precharger(p);
-        allerPosition(p);
-      }
-    });
-
-    // Centrage initial AVANT de poser l'observateur, pour qu'il parte de la
-    // bonne position de défilement.
-    allerPosition(position, true);
-
-    // Le défilement (doigt, flèches, clic) fait foi : on observe la cellule
-    // centrée, clones compris.
-    const observateur = new IntersectionObserver(
-      (entrees) => {
-        for (const entree of entrees) {
-          if (!entree.isIntersecting) continue;
-          const p = cellules.indexOf(entree.target as HTMLElement);
-          if (p < 0) continue;
-          position = p;
-          precharger(p);
-          const reel = reelDe(p);
-          if (reel !== courant) marquer(reel);
-        }
+    const carrousel = creerCarrousel({
+      piste,
+      // Les vignettes et les points sont hors du <section> : ils doivent
+      // eux aussi reagir aux fleches du clavier.
+      zonesClavier: [
+        document.querySelector('.vignettes'),
+        document.querySelector('.points'),
+      ],
+      surChangement(index) {
+        vignettes.forEach((v, i) =>
+          v.setAttribute('aria-selected', i === index ? 'true' : 'false'),
+        );
+        points.forEach((p, i) => {
+          p.toggleAttribute('data-actif', i === index);
+          p.setAttribute('aria-selected', i === index ? 'true' : 'false');
+        });
+        if (champCourant) champCourant.textContent = String(index + 1);
+        if (champLegende) champLegende.textContent = legendes[index] ?? '';
       },
-      { root: zone, threshold: 0.6 },
-    );
-    cellules.forEach((c) => observateur.observe(c));
-
-    /**
-     * Au redimensionnement, `scroll-snap` recale le defilement tout seul et
-     * peut atterrir sur un autre media. On recentre celui qui etait affiche.
-     */
-    let minuteurTaille: number;
-    addEventListener('resize', () => {
-      clearTimeout(minuteurTaille);
-      minuteurTaille = window.setTimeout(() => allerPosition(vise, true), 120);
     });
 
-    // `scrollend` n'est pas partout : repli sur une temporisation.
-    if ('onscrollend' in window) {
-      zone.addEventListener('scrollend', recoller);
-    } else {
-      let minuteur: number;
-      zone.addEventListener('scroll', () => {
-        clearTimeout(minuteur);
-        minuteur = window.setTimeout(recoller, 140);
-      });
+    if (carrousel) {
+      document
+        .querySelector('[data-carrousel-prec]')
+        ?.addEventListener('click', () => carrousel.decaler(-1));
+      document
+        .querySelector('[data-carrousel-suiv]')
+        ?.addEventListener('click', () => carrousel.decaler(1));
+
+      vignettes.forEach((v, i) => v.addEventListener('click', () => carrousel.aller(i)));
+      points.forEach((p, i) => p.addEventListener('click', () => carrousel.aller(i)));
     }
-
-    // Flèches du clavier. Les vignettes et les points sont hors du <section>,
-    // il faut donc écouter aussi sur leurs conteneurs.
-    const auClavier = (event: KeyboardEvent) => {
-      if (event.key === 'ArrowLeft') {
-        event.preventDefault();
-        decaler(-1);
-      } else if (event.key === 'ArrowRight') {
-        event.preventDefault();
-        decaler(1);
-      }
-    };
-
-    carrousel.addEventListener('keydown', auClavier);
-    document
-      .querySelector('.vignettes')
-      ?.addEventListener('keydown', auClavier as EventListener);
-    document
-      .querySelector('.points')
-      ?.addEventListener('keydown', auClavier as EventListener);
-
-    marquer(0);
-
-    // Les images peuvent encore changer la mise en page : on recentre une
-    // fois tout charge, puis on autorise le recollage.
-    const demarrer = () => {
-      position = n > 1 ? 1 : 0;
-      vise = position;
-      precharger(position);
-      // Les partenaires de boucle (premier et dernier media, et leurs clones)
-      // doivent etre prets des le depart : ce sont eux qu'on voit apparaitre
-      // en bouclant, et attendre leur telechargement a ce moment-la se
-      // remarque immediatement.
-      if (n > 1) precharger(n);
-      allerPosition(position, true);
-      marquer(0);
-      requestAnimationFrame(() => {
-        pret = true;
-      });
-    };
-
-    if (document.readyState === 'complete') requestAnimationFrame(demarrer);
-    else addEventListener('load', demarrer, { once: true });
   }
 </script>

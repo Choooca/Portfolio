@@ -108,6 +108,8 @@ for (const page of PAGES) {
       const hauteur = await onglet.evaluate(
         () => document.documentElement.scrollHeight,
       );
+
+
       await onglet.setViewportSize({
         width: format.largeur,
         height: Math.min(hauteur, 20000),

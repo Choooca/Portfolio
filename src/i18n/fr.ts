@@ -11,6 +11,15 @@ export default {
   'nav.theme.clair': 'Passer en thème sombre',
   'nav.langue': 'Langue',
 
+  // Accueil
+  'accueil.portfolio': 'Portfolio',
+  'accueil.defiler': 'Défiler',
+  'accueil.projets': 'Projets',
+  'accueil.voirTout': 'Voir tout',
+  'accueil.aPropos': 'À propos',
+  'accueil.parcours': 'Parcours',
+  'accueil.librairies': 'Librairies',
+
   // Bibliothèque
   'bib.titre': 'Bibliothèque',
   'bib.section.pro': 'Professionnel',

@@ -17,6 +17,15 @@ const en: Partial<Record<keyof typeof fr, string>> = {
   'nav.theme.clair': 'Switch to dark theme',
   'nav.langue': 'Language',
 
+  // Home
+  'accueil.portfolio': 'Portfolio',
+  'accueil.defiler': 'Scroll',
+  'accueil.projets': 'Projects',
+  'accueil.voirTout': 'See all',
+  'accueil.aPropos': 'About',
+  'accueil.parcours': 'Background',
+  'accueil.librairies': 'Libraries',
+
   // Library
   'bib.titre': 'Library',
   'bib.section.pro': 'Professional',

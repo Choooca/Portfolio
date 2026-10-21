@@ -1,105 +1,477 @@
 ---
-// Page provisoire (session 1). Elle sert uniquement a verifier que les
-// fondations tiennent : layout, theme, police, collection de contenu.
-// Elle sera remplacee par l'accueil de la maquette en session 2.
+// Accueil — Figma « Screen / Accueil » (51:2) et « Mobile / Accueil »
+// (2009:1534).
+//
+// L'ecran d'entree qui demandait de faire defiler a ete retire de la
+// maquette : la page commence directement par la banniere.
+import { Image } from 'astro:assets';
 import { getCollection } from 'astro:content';
 import BaseLayout from '../layouts/BaseLayout.astro';
-import Tag from '../components/Tag.astro';
+import GalerieAccueil from '../components/GalerieAccueil.astro';
+import Media from '../components/Media.astro';
+import Icone from '../components/Icone.astro';
 import { href } from '../lib/url';
+import { BIO, DEMOREEL, PARCOURS, COMPETENCES } from '../lib/accueil';
+import { pick, useTranslations, DEFAULT_LOCALE } from '../i18n';
+import banniere from '../assets/accueil/banniere-placeholder.svg';
+
+const locale = DEFAULT_LOCALE;
+const t = useTranslations(locale);
 
 const projets = await getCollection('projets');
-projets.sort((a, b) => (a.data.ordre ?? 0) - (b.data.ordre ?? 0));
+const enAvant = projets
+  .filter((p) => p.data.featured)
+  .sort((a, b) => (a.data.ordre ?? 0) - (b.data.ordre ?? 0));
+
+const NOM = 'Paul Vincensini';
+const ROLE = 'Gameplay Programmer';
 ---
 
-<BaseLayout titre="Accueil">
-  <div class="wrapper stub">
-    <h1>Paul Vincensini</h1>
-    <p class="pitch">Gameplay programmer. Fondations en place — pages a venir.</p>
-
-    <h2>Pastilles — etat par defaut et etat actif</h2>
-    <div class="pastilles">
-      <Tag kind="domaine" label="Gameplay" />
-      <Tag kind="domaine" label="Graphique" active />
-      <Tag kind="moteur" label="Unity" />
-      <Tag kind="moteur" label="Godot" active />
-      <Tag kind="langage" label="C#" />
-      <Tag kind="langage" label="C++" active />
+<BaseLayout titre={NOM} description={pick(BIO.texte, BIO.texte_en, locale)} locale={locale} titreSeul>
+  {/* ================= Bannière =================
+      Seul le voile de gauche reste sombre, pour la lisibilité du titre.
+      Le fondu du bas suit le thème, sinon la bannière s'arrête net sur un
+      bloc sombre au lieu de se fondre dans la page en mode clair. */}
+  <section class="banniere" aria-label={NOM}>
+    <Image
+      class="banniere__fond"
+      src={banniere}
+      alt=""
+      widths={[960, 1920]}
+      sizes="100vw"
+      loading="eager"
+    />
+    <div class="banniere__voile" aria-hidden="true"></div>
+    <div class="banniere__titre">
+      <h1 class="banniere__nom">{NOM}</h1>
+      <p class="banniere__role">{ROLE}</p>
     </div>
+  </section>
 
-    <h2>Projets charges depuis la collection</h2>
-    <ul role="list" class="liste">
-      {
-        projets.map((projet) => (
-          <li>
-            <a href={href(`/projets/${projet.id}`)}>{projet.data.titre}</a>
-            <span class="genre">{projet.data.genre}</span>
-            <span class="equipe">
-              {projet.data.equipe === 1 ? 'Solo' : `${projet.data.equipe} personnes`}
-            </span>
-          </li>
-        ))
-      }
-    </ul>
-  </div>
+  {/* ================= Projets mis en avant ================= */}
+  {
+    enAvant.length > 0 && (
+      <section class="projets" aria-labelledby="titre-projets">
+        <div class="projets__entete wrapper">
+          <h2 id="titre-projets">{t('accueil.projets')}</h2>
+          <a class="projets__tout" href={href('/bibliotheque')}>
+            {t('accueil.voirTout')} →
+          </a>
+        </div>
+        <GalerieAccueil projets={enAvant} locale={locale} />
+      </section>
+    )
+  }
+
+  {/* ================= À propos, demoreel et Parcours =================
+      Ordre mobile : titre, bio, vidéo, compétences, parcours.
+      Desktop : bio et parcours à gauche, vidéo et compétences à droite. */}
+  <section class="apropos" aria-labelledby="titre-apropos">
+    <div class="apropos__grille wrapper">
+      <div class="bio">
+        <h2 id="titre-apropos">{t('accueil.aPropos')}</h2>
+        <p class="bio__texte">{pick(BIO.texte, BIO.texte_en, locale)}</p>
+      </div>
+
+      <div class="cote">
+        {/* La maquette pose un libellé « DEMOREEL » au-dessus et une légende
+            en dessous : retirés à la demande, la vidéo se suffit. */}
+        <div class="demoreel">
+          <Media
+            type="video"
+            src={banniere}
+            video={DEMOREEL.video}
+            alt={`Demoreel — ${NOM}`}
+            widths={[640, 1280]}
+            sizes="(max-width: 1023px) 100vw, 640px"
+            class="demoreel__media"
+          />
+        </div>
+
+        <dl class="competences">
+          {
+            COMPETENCES.map((ligne) => (
+              <div class="competences__ligne">
+                <dt>{pick(ligne.libelle, ligne.libelle_en, locale).toUpperCase()}</dt>
+                <dd>{pick(ligne.valeur, ligne.valeur_en, locale)}</dd>
+              </div>
+            ))
+          }
+        </dl>
+      </div>
+
+      <div class="parcours">
+        <h3>{t('accueil.parcours')}</h3>
+        <ol class="frise" role="list">
+          {
+            PARCOURS.map((entree, i) => (
+              <li class:list={['etape', { 'etape--derniere': i === PARCOURS.length - 1 }]}>
+                <span class="etape__point" aria-hidden="true">
+                  <Icone nom={entree.enCours ? 'point-plein' : 'point-creux'} />
+                </span>
+                <p class:list={['etape__periode', { 'etape__periode--encours': entree.enCours }]}>
+                  {pick(entree.periode, entree.periode_en, locale).toUpperCase()}
+                </p>
+                <p class="etape__intitule">
+                  {pick(entree.intitule, entree.intitule_en, locale)}
+                </p>
+                <p class="etape__lieu">{pick(entree.lieu, entree.lieu_en, locale)}</p>
+              </li>
+            ))
+          }
+        </ol>
+      </div>
+    </div>
+  </section>
 </BaseLayout>
 
 <style>
-  .stub {
-    padding-block: 4rem;
+  /* ================= Bannière ================= */
+  .banniere {
+    position: relative;
+    display: flex;
+    align-items: center;
+    min-height: 280px;
+    padding: 48px var(--gutter);
+    overflow: hidden;
+    background-color: var(--bg-page);
   }
 
-  h1 {
+  .banniere__fond {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .banniere__voile {
+    position: absolute;
+    inset: 0;
+    background:
+      /* Fondu vers le bas : prend la couleur de la page, dans les deux
+         thèmes, pour que la bannière s'y raccorde sans rupture.
+         Il démarre tard et monte doucement, pour laisser voir l'image le
+         plus longtemps possible ; il faut en revanche qu'il soit opaque au
+         tout dernier pixel, sinon la jonction avec la page se voit. */
+      linear-gradient(
+        180deg,
+        color-mix(in srgb, var(--bg-page) 0%, transparent) 72%,
+        color-mix(in srgb, var(--bg-page) 35%, transparent) 88%,
+        var(--bg-page) 100%
+      ),
+      /* Voile de gauche : volontairement sombre même en thème clair, le
+         titre qui s'y pose reste blanc. */
+      linear-gradient(
+        90deg,
+        rgb(10 9 24 / 0.92) 0%,
+        rgb(10 9 24 / 0.55) 42%,
+        rgb(10 9 24 / 0) 75%
+      );
+  }
+
+  .banniere__titre {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  /* Couleurs figées : ce titre se pose sur le voile sombre, pas sur le fond
+     de la page. Les valeurs sont celles de la maquette, identiques en clair
+     et en sombre. */
+  .banniere__nom {
     font-weight: var(--fw-semibold);
-    font-size: clamp(2rem, 6vw, 3.5rem);
+    font-size: clamp(2rem, 6vw, 5.5rem);
+    line-height: 1.05;
+    letter-spacing: -0.02em;
+    color: #f2f1fa;
   }
 
-  .pitch {
-    color: var(--text-muted);
-    margin-block: 0.5rem 3rem;
+  .banniere__role {
+    font-size: clamp(1rem, 2.5vw, 2.5rem);
+    color: #ffd900;
+  }
+
+  /* ================= Projets ================= */
+  .projets {
+    display: flex;
+    flex-direction: column;
+    gap: 28px;
+    padding-block: 48px 56px;
+  }
+
+  /* Au-dessus du carrousel, qui remonte sous l'en-tete pour son ombre. */
+  .projets__entete {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: baseline;
+    justify-content: space-between;
   }
 
   h2 {
-    font-size: 1rem;
-    color: var(--text-subtle);
-    font-weight: var(--fw-regular);
-    padding-block-end: 0.75rem;
-    border-block-end: 1px solid var(--separator);
-  }
-
-  .pastilles {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    padding-block: 1.5rem 3rem;
-  }
-
-  .liste {
-    display: grid;
-    gap: 1px;
-    margin: 0;
-  }
-
-  .liste li {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.25rem 1rem;
-    align-items: baseline;
-    padding-block: 1rem;
-    border-block-end: 1px solid var(--separator);
-  }
-
-  .liste a {
+    font-weight: var(--fw-semibold);
+    font-size: 28px;
+    letter-spacing: -0.44px;
     color: var(--text-primary);
-    font-weight: var(--fw-medium);
-    text-decoration-color: var(--accent-fill);
   }
 
-  .genre {
+  .projets__tout {
+    font-weight: var(--fw-medium);
+    font-size: 15px;
+    color: var(--accent-text);
+    text-decoration: none;
+  }
+
+  .projets__tout:hover {
+    text-decoration: underline;
+  }
+
+  /* ================= À propos ================= */
+  .apropos {
+    padding-block: 56px;
+    background-color: var(--bg-section-alt);
+    border-block: 1px solid var(--separator);
+  }
+
+  /* Mobile : une colonne. L'ordre du balisage est celui de la maquette. */
+  .apropos__grille {
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+  }
+
+  .bio {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    min-width: 0;
+  }
+
+  .bio__texte {
+    font-weight: var(--fw-light);
+    font-size: 16px;
+    line-height: 1.65;
+    text-wrap: pretty;
+    color: var(--text-secondary);
+  }
+
+  /* ---- Colonne de droite : demoreel + compétences ---- */
+  .cote {
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+    min-width: 0;
+  }
+
+  .demoreel :global(.demoreel__media) {
+    aspect-ratio: 16 / 9;
+    width: 100%;
+    border-radius: 20px;
+  }
+
+  /* ---- Parcours ---- */
+  .parcours {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  h3 {
+    font-weight: var(--fw-semibold);
+    font-size: 20px;
+    color: var(--text-primary);
+  }
+
+  .frise {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .etape {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding-inline-start: 32px;
+    padding-block-end: 28px;
+    border-inline-start: 2px solid var(--border-default);
+  }
+
+  /* Le trait s'arrête à la dernière entrée. */
+  .etape--derniere {
+    padding-block-end: 0;
+    border-inline-start-color: transparent;
+  }
+
+  .etape__point {
+    position: absolute;
+    top: 2px;
+    inset-inline-start: -8px;
+    display: inline-flex;
+    color: var(--text-subtle);
+  }
+
+  .etape__periode {
+    font-weight: var(--fw-medium);
+    font-size: 12px;
+    letter-spacing: 1.56px;
+    color: var(--text-subtle);
+  }
+
+  .etape__periode--encours {
+    color: var(--accent-text);
+  }
+
+  .etape:has(.etape__periode--encours) .etape__point {
+    color: var(--accent-fill);
+  }
+
+  .etape__intitule {
+    font-weight: var(--fw-medium);
+    font-size: 17px;
+    color: var(--text-primary);
+  }
+
+  .etape__lieu {
+    font-size: 14px;
     color: var(--text-muted);
   }
 
-  .equipe {
-    margin-inline-start: auto;
+  /* ---- Compétences ---- */
+  .competences {
+    margin: 0;
+    padding-inline: 20px;
+    border: 1px solid var(--border-default);
+    border-radius: 20px;
+    background-color: var(--surface-default);
+  }
+
+  .competences__ligne {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 16px;
+    align-items: center;
+    justify-content: space-between;
+    padding-block: 16px;
+    border-block-end: 1px solid var(--separator);
+  }
+
+  .competences__ligne:last-child {
+    border-block-end: none;
+  }
+
+  dt {
+    font-weight: var(--fw-medium);
+    font-size: 12px;
+    letter-spacing: 1.56px;
     color: var(--text-subtle);
+  }
+
+  dd {
+    margin: 0;
+    font-size: 15px;
+    color: var(--text-primary);
+  }
+
+  /* ====================================================================
+     Desktop : tailles de la maquette 1920.
+     Bio et parcours à gauche, demoreel et compétences à droite.
+     ==================================================================== */
+  @media (min-width: 1024px) {
+    .banniere {
+      min-height: 640px;
+      padding-block: 0;
+    }
+
+    .banniere__titre {
+      gap: 12px;
+    }
+
+    .projets {
+      gap: 48px;
+      padding-block: 88px 96px;
+    }
+
+    h2 {
+      font-size: 44px;
+    }
+
+    .projets__tout {
+      font-size: 20px;
+    }
+
+    .apropos {
+      padding-block: 96px;
+    }
+
+    .apropos__grille {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 640px;
+      grid-template-areas:
+        'bio cote'
+        'parcours cote';
+      column-gap: 96px;
+      row-gap: 28px;
+      align-items: start;
+    }
+
+    .bio {
+      grid-area: bio;
+      gap: 28px;
+    }
+
+    .parcours {
+      grid-area: parcours;
+      gap: 24px;
+      padding-block-start: 16px;
+    }
+
+    .cote {
+      grid-area: cote;
+      gap: 40px;
+    }
+
+    .bio__texte {
+      font-size: 22px;
+    }
+
+    h3 {
+      font-size: 24px;
+    }
+
+    .etape__periode {
+      font-size: 13px;
+    }
+
+    .etape__intitule {
+      font-size: 20px;
+    }
+
+    .etape__lieu {
+      font-size: 16px;
+    }
+
+    .competences {
+      padding-inline: 32px;
+      border-radius: 24px;
+    }
+
+    .competences__ligne {
+      flex-wrap: nowrap;
+      padding-block: 22px;
+    }
+
+    dt {
+      font-size: 13px;
+    }
+
+    dd {
+      font-size: 18px;
+    }
   }
 </style>
